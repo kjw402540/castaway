@@ -1,0 +1,11 @@
+{
+  "name": "castaway",
+  "private": true,
+  "workspaces": ["apps/*"],
+  "scripts": {
+    "db:up": "cd infra && docker compose up -d",
+    "db:down": "cd infra && docker compose down",
+    "dev:api": "pnpm --filter @castaway/api dev",
+    "dev:mobile": "pnpm --filter @castaway/mobile expo start --tunnel"
+  }
+}
