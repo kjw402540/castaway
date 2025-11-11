@@ -10,7 +10,7 @@ datasource db {
 model Entry {
   id        String   @id @default(cuid())
   text      String
-  summary   String
+  summary   String?
   keywords  String[]  // PostgreSQL 배열
   createdAt DateTime @default(now())
 }

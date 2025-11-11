@@ -1,5 +1,3 @@
-// apps/mobile/components/DiarySheet.js
-
 import { useState } from 'react';
 import {
   View, Text, TextInput, Button, Modal, Pressable, Alert,
@@ -22,23 +20,30 @@ export default function DiarySheet({ open, onClose, apiBase }) {
 
     try {
       setSaving(true);
-      const res = await fetch(`${apiBase}/v1/entries`, {
+      const res = await fetch(`${apiBase}/api/v1/diaries`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json; charset=utf-8' },
-        body: JSON.stringify({
-          text,
-          // ▼ 백엔드가 아직 필드를 요구한다면 임시로 포함
-          // summary: null,
-          // keywords: []
-        })
+        body: JSON.stringify({ text })
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      await res.json();
-      Alert.alert('저장 완료', '일기가 저장되었습니다.');
+
+      // raw 텍스트로 받기
+      const raw = await res.text();
+
+      if (!res.ok) {
+        // 서버가 에러 JSON을 보내더라도 raw 그대로 보여줌
+        Alert.alert('에러', `요청 실패\nHTTP ${res.status}\n\n${raw}`);
+        return;
+      }
+
+      // 그냥 원문 그대로 알림
+      Alert.alert('서버 응답 (raw)', raw);
+
+      // 성공 후 초기화
       setText('');
-      onClose();
+      onClose?.();
+
     } catch (e) {
-      Alert.alert('에러', String(e?.message || e));
+      Alert.alert('에러', `AI 분석 또는 저장 중 오류가 발생했습니다.\n${String(e?.message || e)}`);
     } finally {
       setSaving(false);
     }
@@ -60,12 +65,10 @@ export default function DiarySheet({ open, onClose, apiBase }) {
               style={{ flex: 1 }}
             >
               <View style={{ gap: 10, flex: 1 }}>
-                {/* 끌 손잡이 */}
                 <View style={{ alignItems: 'center' }}>
                   <View style={{ width: 60, height: 5, backgroundColor: '#E2E8F0', borderRadius: 3 }} />
                 </View>
 
-                {/* 헤더 */}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={{ fontSize: 18, fontWeight: '700' }}>일기 작성</Text>
                   <Pressable onPress={onClose} style={{ padding: 8 }}>
@@ -73,7 +76,6 @@ export default function DiarySheet({ open, onClose, apiBase }) {
                   </Pressable>
                 </View>
 
-                {/* 일기 입력만 남김 */}
                 <Text>일기</Text>
                 <TextInput
                   value={text}
@@ -84,10 +86,9 @@ export default function DiarySheet({ open, onClose, apiBase }) {
                   textAlignVertical="top"
                 />
 
-                {/* 버튼 */}
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <View style={{ flex: 1 }}>
-                    <Button title={saving ? '저장 중…' : '저장'} onPress={save} disabled={saving} />
+                    <Button title={saving ? '분석 중…' : '저장'} onPress={save} disabled={saving} />
                   </View>
                   <View style={{ flex: 1 }}>
                     <Button title="취소" color="#9CA3AF" onPress={onClose} disabled={saving} />
@@ -107,5 +108,5 @@ const input = {
   borderColor: '#CBD5E1',
   padding: 10,
   borderRadius: 8,
-  minHeight: 160, // 작성 영역 좀 넉넉하게
+  minHeight: 160,
 };
