@@ -1,6 +1,6 @@
 // apps/mobile/components/IslandScene.js
 import React, { useEffect } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,13 +13,13 @@ import Svg, {
   Filter // TS hint noop
 } from 'react-native-svg';
 
-// 섬/바다 캔버스 크기(비율 유지용)
-const W = 360;
-const H = 300;
+const W = 300; // 1:1 비율
+const H = 500; // 1:1 비율
 
 export default function IslandScene({
   onPressChest = () => {},
   onPressTable = () => {},
+  scale = 1,
 }) {
   // ──────────────────────────────
   // 애니메이션 공유값
@@ -79,9 +79,9 @@ export default function IslandScene({
   }));
 
   return (
-    <View style={{ alignItems: 'center', marginTop: 80 }}>
+    <View style={{ alignItems: 'center', marginTop: 150 }}>
       {/* 캔버스는 가운데 정렬 */}
-      <View style={{ width: W, height: H, overflow: 'visible' }}>
+      <View style={{ width: W, height: H, overflow: 'visible', transform: [{ scale: scale }] }}>
         {/* ── 하늘 구름 ───────────────── */}
         <Animated.View style={[{ position: 'absolute', top: -10, left: 40 }, cloud1Style]}>
           <Cloud />

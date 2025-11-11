@@ -1,5 +1,6 @@
 // apps/mobile/screens/MainPage.js
 import { useState } from 'react';
+import { useWindowDimensions} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   View, Text, Image, Pressable, Alert, Keyboard, TouchableWithoutFeedback
@@ -7,6 +8,9 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import IslandScene from '../components/IslandScene';
 import DiarySheet from '../components/DiarySheet';
+import FloatingModal from '../components/FloatingModal';
+import ChestModalContent from '../components/ChestModalContent';
+import TableModalContent from '../components/TurntableModalContent';
 
 const API = process.env.EXPO_PUBLIC_API_BASE;
 
@@ -14,8 +18,16 @@ const API = process.env.EXPO_PUBLIC_API_BASE;
 const ICON_BELL = 'https://img.icons8.com/ios-filled/100/bell.png';
 const ICON_USER = 'https://img.icons8.com/ios-filled/100/user.png';
 
+const ISLAND_DESIGN_WIDTH = 300;
+
 export default function MainPage({ navigation }) {
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const [chestOpen, setChestOpen] = useState(false);
+  const [tableOpen, setTableOpen] = useState(false);
+
+  const { width: screenWidth } = useWindowDimensions();
+  const islandScale = screenWidth / ISLAND_DESIGN_WIDTH;
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -39,9 +51,17 @@ export default function MainPage({ navigation }) {
 
         {/* 섬 + 오브젝트 + 파도/구름 */}
         <IslandScene
-          onPressChest={() => Alert.alert('보물상자', '보물상자 모달 열기')}
-          onPressTable={() => Alert.alert('턴테이블', '턴테이블 모달 열기')}
+          scale={islandScale}
+          onPressChest={() => setChestOpen(true)}
+          onPressTable={() => setTableOpen(true)}
         />
+        <FloatingModal visible={chestOpen} onRequestClose={() => setChestOpen(false)}>
+          <ChestModalContent onClose={() => setChestOpen(false)} />
+        </FloatingModal>
+
+        <FloatingModal visible={tableOpen} onRequestClose={() => setTableOpen(false)}>
+          <TableModalContent onClose={() => setTableOpen(false)} />
+        </FloatingModal>
 
         {/* 하단 입력바(가운데 정렬) + 다이어리 버튼 */}
         <View style={{ position: 'absolute', left: 0, right: 0, bottom: 86, alignItems: 'center', gap: 18 }}>
