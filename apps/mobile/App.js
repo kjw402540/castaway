@@ -4,8 +4,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import MainPage from './screens/MainPage';
 import ProfileScreen from './screens/ProfileScreen';
+import WeeklyReport from './components/WeeklyReport';
 
 const Stack = createNativeStackNavigator();
+
 
 export default function App() {
   return (
@@ -17,6 +19,7 @@ export default function App() {
       >
         <Stack.Screen name="Main" component={MainPage} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="WeeklyReport" component={WeeklyReport} options={{ title: '주간 리포트' }} />
       </Stack.Navigator>
     </NavigationContainer>
   );
