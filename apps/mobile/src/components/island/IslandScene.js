@@ -1,166 +1,76 @@
-import React, { useEffect } from "react";
-import {
-  View,
-  Image,
-  Pressable,
-  Animated,
-  Dimensions,
-  Text,
-} from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useRef, useState } from "react";
+import { View, Animated } from "react-native";
 import { useEmotion } from "../../context/EmotionContext";
-import useFadeAnimation from "../../domain/hooks/useFadeAnimation";
-import { emotionColors } from "../../utils/emotionMap";
 
-const { height } = Dimensions.get("window");
+import SkyLayer from "./SkyLayer";
+import OceanLayer from "./OceanLayer";
+import WavesLayer from "./WavesLayer";
 
-export default function IslandScene({ onPressChest, onPressTurntable }) {
+import { styles } from "./styles";
+
+export default function IslandScene() {
   const { emotion } = useEmotion();
-  const { opacity, fadeIn } = useFadeAnimation(0, 800);
+
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  const currentEmotion = emotion || "neutral";
+  const nextGradients = emotionGradients[currentEmotion];
+
+  const [prevGradients, setPrevGradients] = useState({
+    sky: ["#DDE6F5", "#C8D5EA"],
+    ocean: ["#8FBEEA", "#72AEE6"],
+  });
 
   useEffect(() => {
-    fadeIn();
+    setPrevGradients(nextGradients);
+
+    opacity.setValue(0);
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 900,
+      useNativeDriver: false,
+    }).start();
   }, [emotion]);
 
-  const { sky, sea } = emotionColors[emotion] || emotionColors.neutral;
-
   return (
-    <View
-      style={{
-        flex: 1,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-      pointerEvents="box-none"
-    >
+    <View style={styles.container}>
+
       {/* 하늘 */}
-      <Animated.View
-        pointerEvents="none"
-        style={{
-          opacity,
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: "50%",
-        }}
-      >
-        <LinearGradient
-          style={{ flex: 1 }}
-          colors={[sky, "#ffffff"]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
-        />
-      </Animated.View>
+      <SkyLayer
+        prevColors={prevGradients.sky}
+        nextColors={nextGradients.sky}
+        animatedOpacity={opacity}
+      />
 
       {/* 바다 */}
-      <Animated.View
-        pointerEvents="none"
-        style={{
-          opacity,
-          position: "absolute",
-          top: "50%",
-          left: 0,
-          right: 0,
-          bottom: 0,
-        }}
-      >
-        <LinearGradient
-          style={{ flex: 1 }}
-          colors={["#66C2FF", sea]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 0, y: 1 }}
+      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "38%" }}>
+        <OceanLayer
+          prevColors={prevGradients.ocean}
+          nextColors={nextGradients.ocean}
+          animatedOpacity={opacity}
         />
-      </Animated.View>
-
-      {/* 섬과 오브젝트 */}
-      <View
-        style={{
-          position: "absolute",
-          bottom: height * 0.33,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-        pointerEvents="box-none"
-      >
-        {/* 나무 */}
-        <Text
-          style={{
-            fontSize: 100,
-            position: "absolute",
-            bottom: 130,
-            left: 90,
-            zIndex: 1,
-          }}
-        >
-          🌴
-        </Text>
-
-        {/* 섬 */}
-        <Image
-          source={require("../../../assets/ground.png")}
-          style={{
-            width: 480,
-            height: 240,
-            resizeMode: "contain",
-          }}
-        />
-
-        {/* 바위 */}
-        <Image
-          source={require("../../../assets/rock.png")}
-          style={{
-            width: 120,
-            height: 120,
-            resizeMode: "contain",
-            position: "absolute",
-            bottom: 85,
-            left: 180,
-          }}
-        />
-
-        {/* 보물상자 */}
-        <Pressable
-          onPress={onPressChest}
-          style={{
-            position: "absolute",
-            bottom: 80,
-            left: 120,
-            zIndex: 10,
-          }}
-          pointerEvents="box-only"
-        >
-          <Image
-            source={require("../../../assets/chest.png")}
-            style={{
-              width: 90,
-              height: 90,
-              resizeMode: "contain",
-            }}
-          />
-        </Pressable>
-
-        {/* 턴테이블 */}
-        <Pressable
-          onPress={onPressTurntable}
-          style={{
-            position: "absolute",
-            bottom: 85,
-            right: 120,
-            zIndex: 10,
-          }}
-          pointerEvents="box-only"
-        >
-          <Image
-            source={require("../../../assets/turntable.png")}
-            style={{
-              width: 90,
-              height: 90,
-              resizeMode: "contain",
-            }}
-          />
-        </Pressable>
       </View>
+
+      {/* 파도 — 바다 위로 고정 */}
+      <WavesLayer height={50} offsetFromBottom={330} />
+
+
     </View>
   );
+
 }
+
+const emotionGradients = {
+  joy: {
+    sky: ["#E9F4FF", "#CFE3FF"],
+    ocean: ["#9EC9F7", "#7AB6F3"],
+  },
+  sadness: {
+    sky: ["#BFC7D4", "#A7AFBF"],
+    ocean: ["#607A9B", "#4A5C75"],
+  },
+  neutral: {
+    sky: ["#DDE6F5", "#C8D5EA"],
+    ocean: ["#8FBEEA", "#72AEE6"],
+  },
+};
