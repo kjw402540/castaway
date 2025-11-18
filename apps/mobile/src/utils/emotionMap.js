@@ -1,8 +1,32 @@
 export const emotionColors = {
-  기쁨: { sky: "#AEE1FF", sea: "#66D4FF" },
-  슬픔: { sky: "#7B9CCB", sea: "#4A6FA5" },
-  분노: { sky: "#FF9C9C", sea: "#FF6B6B" },
-  놀람: { sky: "#FFD580", sea: "#FFA500" },
-  중립: { sky: "#C0C0C0", sea: "#808080" },
-  neutral: { sky: "#C0C0C0", sea: "#808080" }, // fallback
+  기쁨: {
+    skyTop: "#C4E8FF",
+    skyBottom: "#E8F6FF",
+    sea: "#76D7FF",
+  },
+  슬픔: {
+    skyTop: "#A7B8D9",
+    skyBottom: "#D7E1F2",
+    sea: "#5679A8",
+  },
+  분노: {
+    skyTop: "#FFB3B3",
+    skyBottom: "#FFE1E1",
+    sea: "#FF6B6B",
+  },
+  놀람: {
+    skyTop: "#FFE3A4",
+    skyBottom: "#FFF4D2",
+    sea: "#FFB347",
+  },
+  중립: {
+    skyTop: "#D9D9D9",
+    skyBottom: "#F0F0F0",
+    sea: "#9B9B9B",
+  },
+  neutral: {
+    skyTop: "#C4E8FF",
+    skyBottom: "#E8F6FF",
+    sea: "#76D7FF",
+  },
 };

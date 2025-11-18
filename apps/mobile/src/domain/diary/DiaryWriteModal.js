@@ -1,16 +1,17 @@
+// src/domain/diary/DiaryWriteModal.js
 import React, { useState, useEffect } from "react";
 import { View, Text, Modal, TouchableOpacity, TextInput, StyleSheet } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 import { useDiary } from "../../context/DiaryContext";
 
-export default function DiaryModal({
+export default function DiaryWriteModal({
   visible,
-  onClose,
   defaultText = "",
   defaultObject = null,
   mode = "write",
   targetDate = null,
   onSaved,
+  onClose,
 }) {
   const { saveDiary } = useDiary();
 
@@ -24,24 +25,18 @@ export default function DiaryModal({
     }
   }, [visible, defaultText, defaultObject]);
 
-
   if (!visible) return null;
 
   const handleSave = async () => {
     if (!text.trim()) return;
 
     const dateToSave =
-      mode === "edit"
-        ? targetDate
-        : targetDate || new Date().toISOString().split("T")[0];
+      mode === "edit" ? targetDate : targetDate || new Date().toISOString().split("T")[0];
 
     await saveDiary(dateToSave, text, object);
 
     if (onSaved) onSaved(dateToSave, text, object);
-
-    onClose();
   };
-
 
   return (
     <Modal transparent animationType="slide" visible={visible}>

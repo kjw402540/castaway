@@ -11,11 +11,11 @@ import NotificationModal from "../../components/ui/NotificationModal";
 import ChestModal from "../../domain/objectbox/ObjectBoxModal";
 import TurntableModal from "../../domain/audio/TurntableModal";
 
-import DiaryModal from "../../domain/dairy/DiaryWriteModal";
-import CalendarModal from "../../domain/dairy/CalendarModal";
-import DiaryViewModal from "../../domain/dairy/DiaryViewModal";
+import DiaryWriteModal from "../../domain/diary/DiaryWriteModal";
+import CalendarModal from "../../domain/diary/CalendarModal";
+import DiaryViewModal from "../../domain/diary/DiaryViewModal";
 
-import { useDiaryModal } from "../../domain/dairy/useDiaryModal";
+import { useDiaryModal } from "../../domain/diary/useDiaryModal";
 import { useTopModal } from "../../domain/hooks/useTopModal";
 
 export default function MainPage() {
@@ -46,7 +46,7 @@ export default function MainPage() {
 
       {/* ===== 입력창 ===== */}
       <InputBox
-        onPressDiary={() => diaryModal.setDiaryModalVisible(true)}
+        onPressDiary={() => diaryModal.openTodayWrite()}
         onPressBook={() => diaryModal.setCalendarVisible(true)}
       />
 
@@ -65,21 +65,25 @@ export default function MainPage() {
       />
 
       {/* ===== Diary 관련 모달 ===== */}
-      <DiaryModal
-        visible={diaryModal.isDiaryModalVisible}
+      {/* 작성/수정 */}
+      <DiaryWriteModal
+        visible={diaryModal.isDiaryWriteVisible}
         mode={diaryModal.editMode ? "edit" : "write"}
         targetDate={diaryModal.selectedDate}
-        onClose={() => diaryModal.setDiaryModalVisible(false)}
-        onSaved={() => {
-          diaryModal.setDiaryModalVisible(false);
-          diaryModal.setDiaryViewVisible(true);
-        }}
+        defaultText={diaryModal.selectedDiary}
+        defaultObject={diaryModal.selectedObject}
+        onClose={() => diaryModal.setDiaryWriteVisible(false)}
+        onSaved={diaryModal.handleSaved}
       />
+
+      {/* 달력 */}
       <CalendarModal
         visible={diaryModal.isCalendarVisible}
         onClose={() => diaryModal.setCalendarVisible(false)}
         onSelectDate={diaryModal.handleSelectDate}
       />
+
+      {/* 조회 */}
       <DiaryViewModal
         visible={diaryModal.isDiaryViewVisible}
         onClose={() => diaryModal.setDiaryViewVisible(false)}

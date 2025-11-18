@@ -1,60 +1,30 @@
 import React, { useEffect, useRef, useState } from "react";
 import { View, Animated } from "react-native";
+import React from "react";
+import { View } from "react-native";
 import { useEmotion } from "../../context/EmotionContext";
 
-import SkyLayer from "./SkyLayer";
-import OceanLayer from "./OceanLayer";
-import WavesLayer from "./WavesLayer";
+import { islandStyles as s } from "./IslandSceneStyles";
 
-import { styles } from "./styles";
+import SkyLayer from "./SkyLayer";
+import CloudLayer from "./CloudLayer";
+import SeaLayer from "./SeaLayer";
+import WaveLayer from "./WaveLayer";
+import IslandObjectsLayer from "./IslandObjectsLayer";
 
 export default function IslandScene() {
   const { emotion } = useEmotion();
 
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  const currentEmotion = emotion || "neutral";
-  const nextGradients = emotionGradients[currentEmotion];
-
-  const [prevGradients, setPrevGradients] = useState({
-    sky: ["#DDE6F5", "#C8D5EA"],
-    ocean: ["#8FBEEA", "#72AEE6"],
-  });
-
-  useEffect(() => {
-    setPrevGradients(nextGradients);
-
-    opacity.setValue(0);
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 900,
-      useNativeDriver: false,
-    }).start();
-  }, [emotion]);
-
   return (
-    <View style={styles.container}>
-
-      {/* 하늘 */}
-      <SkyLayer
-        prevColors={prevGradients.sky}
-        nextColors={nextGradients.sky}
-        animatedOpacity={opacity}
+    <View style={s.container} pointerEvents="box-none">
+      <SkyLayer emotion={emotion} />
+      <CloudLayer />
+      <SeaLayer emotion={emotion} />
+      {/* <WaveLayer /> */}
+      <IslandObjectsLayer
+        onPressChest={onPressChest}
+        onPressTurntable={onPressTurntable}
       />
-
-      {/* 바다 */}
-      <View style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: "38%" }}>
-        <OceanLayer
-          prevColors={prevGradients.ocean}
-          nextColors={nextGradients.ocean}
-          animatedOpacity={opacity}
-        />
-      </View>
-
-      {/* 파도 — 바다 위로 고정 */}
-      <WavesLayer height={50} offsetFromBottom={330} />
-
-
     </View>
   );
 

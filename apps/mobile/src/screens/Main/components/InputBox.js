@@ -15,7 +15,7 @@ export default function InputBox({ onPressDiary, onPressBook }) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{
         position: "absolute",
-        bottom: 40,
+        bottom: 120,
         width: "100%",
         alignItems: "center",
       }}

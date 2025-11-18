@@ -1,3 +1,4 @@
+// src/domain/diary/DiaryViewModal.js
 import React from "react";
 import { View, Text, Modal, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
@@ -16,7 +17,7 @@ export default function DiaryViewModal({
     <Modal transparent animationType="fade" visible={visible}>
       <View style={styles.overlay}>
         <View style={styles.modalBox}>
-          
+
           <View style={styles.header}>
             <Text style={styles.title}>{date}</Text>
 

@@ -1,10 +1,9 @@
-// src/services/DiaryService.js
-// Fake API layer - 나중에 백엔드 붙이면 여기만 교체하면 됨.
+// src/domain/diary/DiaryService.js
 
 let diaryDB = {
   "2025-11-11": {
     text: "아니 후시 시간을 무슨 12시간을 잡아놨다...",
-    object: require("../../../assets/objects/mic.png"), 
+    object: require("../../../assets/objects/mic.png"),
   },
 };
 
