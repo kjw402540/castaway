@@ -7,17 +7,17 @@ let diaryDB = {
   },
 };
 
-export async function fetchDiary(date) {
-  await delay(120);
+export async function getDiary(date) {
+  await delay(100);
   return diaryDB[date] || null;
 }
 
-export async function saveDiaryService(date, text, object = null) {
-  await delay(120);
+export async function saveDiary(date, text, object = null) {
+  await delay(100);
   diaryDB[date] = { text, object };
   return true;
 }
 
 function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise((res) => setTimeout(res, ms));
 }

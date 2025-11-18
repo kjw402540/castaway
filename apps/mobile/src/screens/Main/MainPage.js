@@ -7,27 +7,42 @@ import { useNavigation } from "@react-navigation/native";
 import IslandScene from "../../components/island/IslandScene";
 import InputBox from "./components/InputBox";
 
-import NotificationModal from "../../components/ui/NotificationModal";
-import ChestModal from "../../domain/objectbox/ObjectBoxModal";
-import TurntableModal from "../../domain/audio/TurntableModal";
+import NoticeModal from "../../components/ui/NoticeModal";
+
+import ChestModal from "../../domain/chest/ChestModal";
+import { useChest } from "../../domain/chest/useChest";
+
+import TurntableModal from "../../domain/turntable/TurntableModal";
 
 import DiaryWriteModal from "../../domain/diary/DiaryWriteModal";
 import CalendarModal from "../../domain/diary/CalendarModal";
 import DiaryViewModal from "../../domain/diary/DiaryViewModal";
 
-import { useDiaryModal } from "../../domain/diary/useDiaryModal";
+import { useDiary } from "../../domain/diary/useDiary";
 import { useTopModal } from "../../domain/hooks/useTopModal";
 
 export default function MainPage() {
   const navigation = useNavigation();
-  const diaryModal = useDiaryModal();
+  const diaryModal = useDiary();
   const topModal = useTopModal();
+
+  // Chest 데이터 로더 (중요)
+  const chest = useChest();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#A7D8FF" }}>
 
       {/* ===== 상단 아이콘 ===== */}
-      <View style={{ position: "absolute", top: 50, right: 20, flexDirection: "row", gap: 15, zIndex: 10 }}>
+      <View
+        style={{
+          position: "absolute",
+          top: 50,
+          right: 20,
+          flexDirection: "row",
+          gap: 15,
+          zIndex: 10,
+        }}
+      >
         <TouchableOpacity onPress={() => topModal.setNotifVisible(true)}>
           <FontAwesome name="bell" size={22} color="#1E3A8A" />
         </TouchableOpacity>
@@ -51,18 +66,26 @@ export default function MainPage() {
       />
 
       {/* ===== 상단 모달 ===== */}
-      <NotificationModal
+      <NoticeModal
         visible={topModal.isNotifVisible}
         onClose={() => topModal.setNotifVisible(false)}
       />
+
       <ChestModal
         visible={topModal.isChestVisible}
         onClose={() => topModal.setChestVisible(false)}
+        diaryModal={diaryModal}
+        objectsByEmotion={chest.objectsByEmotion}   // ★ 핵심 추가
       />
+
       <TurntableModal
         visible={topModal.isTurntableVisible}
         onClose={() => topModal.setTurntableVisible(false)}
+        calendarModal={{
+          open: () => diaryModal.setCalendarVisible(true)
+        }}
       />
+
 
       {/* ===== Diary 관련 모달 ===== */}
       {/* 작성/수정 */}
@@ -80,8 +103,17 @@ export default function MainPage() {
       <CalendarModal
         visible={diaryModal.isCalendarVisible}
         onClose={() => diaryModal.setCalendarVisible(false)}
-        onSelectDate={diaryModal.handleSelectDate}
+        onSelectDate={(day) => {
+          if (topModal.isTurntableVisible) {
+            // 🎧 turntable 모드일 때는 일기 열지 않음
+            diaryModal.handleSelectDateFromTurntable(day);
+          } else {
+            // 📘 diary 모드 (기존 동작)
+            diaryModal.handleSelectDate(day);
+          }
+        }}
       />
+
 
       {/* 조회 */}
       <DiaryViewModal

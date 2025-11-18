@@ -40,6 +40,6 @@ export function DiaryProvider({ children }) {
   );
 }
 
-export function useDiary() {
+export function useDiaryContext() {
   return useContext(DiaryContext);
 }

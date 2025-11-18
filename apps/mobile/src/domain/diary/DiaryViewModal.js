@@ -27,7 +27,7 @@ export default function DiaryViewModal({
           </View>
 
           {object && (
-            <View style={styles.objectBox}>
+            <View style={styles.chest}>
               <Image
                 source={object}
                 style={{ width: 60, height: 60, resizeMode: "contain" }}
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#1E3A8A",
   },
-  objectBox: {
+  chest: {
     alignItems: "center",
     marginBottom: 15,
   },

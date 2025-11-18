@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, Modal, TouchableOpacity, TextInput, StyleSheet } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
-import { useDiary } from "../../context/DiaryContext";
+import { useDiaryContext } from "../../context/DiaryContext";
 
 export default function DiaryWriteModal({
   visible,
@@ -13,7 +13,7 @@ export default function DiaryWriteModal({
   onSaved,
   onClose,
 }) {
-  const { saveDiary } = useDiary();
+  const { saveDiary } = useDiaryContext();
 
   const [text, setText] = useState(defaultText);
   const [object, setObject] = useState(defaultObject);
