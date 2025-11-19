@@ -51,7 +51,7 @@ export default function ReportPage({ navigation }) {
         {/* 메인으로 돌아가기 */}
         <TouchableOpacity
           style={[styles.mainBtn, { backgroundColor: "#3B82F6" }]}
-          onPress={() => navigation.navigate("Main")}
+          onPress={() => navigation.navigate("Home")}
         >
           <Text style={styles.mainBtnText}>메인으로 돌아가기</Text>
         </TouchableOpacity>

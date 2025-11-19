@@ -9,15 +9,16 @@ import {
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 
-export default function InputBox({ onPressDiary, onPressBook }) {
+export default function InputBox({ onPressDiary }) {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{
         position: "absolute",
-        bottom: 120,
+        bottom: 90,                    // ★ 여기 수정
         width: "100%",
         alignItems: "center",
+        zIndex: 20,                     // ★ 탭바 위로 오게
       }}
     >
       <View
@@ -35,15 +36,6 @@ export default function InputBox({ onPressDiary, onPressBook }) {
           elevation: 5,
         }}
       >
-        {/* 왼쪽 책 아이콘 */}
-        <TouchableOpacity
-          onPress={onPressBook}
-          style={{ paddingRight: 12 }}
-        >
-          <FontAwesome name="book" size={20} color="#1E3A8A" />
-        </TouchableOpacity>
-
-        {/* 텍스트 영역 */}
         <TouchableOpacity
           style={{ flex: 1, flexDirection: "row", alignItems: "center" }}
           activeOpacity={0.8}

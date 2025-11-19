@@ -31,7 +31,7 @@ export const islandStyles = StyleSheet.create({
 
   wave: {
     position: "absolute",
-    bottom: height * 0.29,
+    bottom: height * 0.22,
     width: 330,
     height: 150,
     opacity: 0.9,
@@ -40,13 +40,14 @@ export const islandStyles = StyleSheet.create({
 
   islandWrapper: {
     position: "absolute",
-    bottom: height * 0.2,
+    bottom: height * 0.12,     // ★ 가장 중요한 부분
     width: ISLAND_WIDTH,
     height: ISLAND_HEIGHT,
     alignItems: "center",
     justifyContent: "flex-end",
     zIndex: 5,
   },
+
 
   /* ===== GROUND ===== */
   ground: {
@@ -61,7 +62,7 @@ export const islandStyles = StyleSheet.create({
     height: 90,
     resizeMode: "contain",
     position: "absolute",
-    bottom: 180,
+    bottom: 160,
     left: (ISLAND_WIDTH - 180) / 2,
     zIndex: 9,
   },
@@ -69,28 +70,29 @@ export const islandStyles = StyleSheet.create({
   /* ===== CHEST ===== */
   chestWrapper: {
     position: "absolute",
-    bottom: 110,
-    left: ISLAND_WIDTH - 375,
+    bottom: 100,                // ★ 섬 위치에 맞춰 내려줌
+    left: ISLAND_WIDTH - 365,
     zIndex: 10,
   },
 
+
   chest: {
-    width: 150,
-    height: 150,
+    width: 140,
+    height: 140,
     resizeMode: "contain",
   },
 
   /* ===== TURNTABLE ===== */
   turntableWrapper: {
     position: "absolute",
-    bottom: 90,
-    right: (ISLAND_WIDTH - 400) / 2,
+    bottom: 60,                // ★ 동일하게 보정
+    right: (ISLAND_WIDTH - 380) / 2,
     zIndex: 10,
   },
 
   turntable: {
-    width: 200,
-    height: 200,
+    width: 180,
+    height: 180,
     resizeMode: "contain",
   },
 
