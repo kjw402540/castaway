@@ -1,10 +1,11 @@
-import { Router } from 'express';
-import { createDiary, getDiaries } from '../controllers/diaryController.js';
+import { Router } from "express";
+import * as controller from "../controllers/diaryController.js";
 
 const router = Router();
 
-// 텍스트만 받음 (JSON body)
-router.post('/', createDiary);
-router.get('/', getDiaries);
+router.get("/", controller.getAll);
+router.get("/:date", controller.getByDate);
+router.post("/", controller.save);
+router.delete("/:date", controller.remove);
 
 export default router;

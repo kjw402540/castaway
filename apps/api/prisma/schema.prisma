@@ -4,149 +4,85 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Entry {
   id        String   @id @default(cuid())
   text      String
   summary   String?
-  keywords  String[]  // PostgreSQL 배열
+  keywords  String[]
   createdAt DateTime @default(now())
 }
 
-// User 모델 (사용자)
 model User {
-  user_id           Int       @id @default(autoincrement())
-  nickname          String    @db.VarChar(50)
-  email             String    @unique @db.VarChar(100)
-  password_hash     String
-  cluster_id        Int       // FK
-  created_date      DateTime  @default(now()) @db.Timestamp(6)
-  diary_reminder    DateTime? @db.Time
-  bgm_volume        Float     @default(0.5)
-  sfx_volume        Float     @default(0.5)
-  used_flag         Int       @default(0)
-  
-  // Relations
-  cluster           ClusterGroup @relation(fields: [cluster_id], references: [cluster_id])
-  diaries           Diary[]
-  objects           Object[]
-  bgms              BGM[]
-  reports           Report[]
-  notifications     Notification[]
+  user_id       Int       @id @default(autoincrement())
+  nickname      String    @db.VarChar(50)
+  email         String    @unique @db.VarChar(100)
+  password_hash String
+  cluster_id    Int
+  created_date  DateTime  @default(now()) @db.Timestamp(6)
+  diary_reminder DateTime? @db.Time
+  bgm_volume    Float     @default(0.5)
+  sfx_volume    Float     @default(0.5)
+  used_flag     Int       @default(0)
+
+  cluster       ClusterGroup @relation(fields: [cluster_id], references: [cluster_id])
+  diaries       Diary[]
+  objects       Object[]
+  bgms          BGM[]
+  reports       Report[]
+  notifications Notification[]
 }
 
-// Diary 모델 (일기)
 model Diary {
-  diary_id          Int          @id @default(autoincrement())
-  user_id           Int          // FK
-  original_text     String
-  emotion_id        Int          @unique // FK (1:1 관계)
-  object_id         Int?         @unique // FK (1:1 관계, Nullable)
-  created_date      DateTime     @default(now()) @db.Timestamp(6)
-  input_type        String       @db.VarChar(10)
-  flag              String       @db.VarChar(10)
-  
-  // Relations
-  user              User         @relation(fields: [user_id], references: [user_id])
-  // EmotionResult 관계: 외래 키(emotion_id)를 Diary가 소유하므로 여기에 인수를 유지합니다.
-  emotionResult     EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
-  // Object 관계: 외래 키(object_id)를 Diary가 소유하지만, Object 쪽이 필수이므로 여기서는 인수를 제거합니다. (오류 해결)
-  object            Object?      @relation 
-  bgms              BGM[]
+  diary_id      Int           @id @default(autoincrement())
+  user_id       Int
+  original_text String
+  emotion_id    Int           @unique
+  object_id     Int?          @unique
+  created_date  DateTime      @default(now()) @db.Timestamp(6)
+  input_type    String        @db.VarChar(10)
+  flag          String        @db.VarChar(10)
+
+  user          User          @relation(fields: [user_id], references: [user_id])
+  emotionResult EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
+  object        Object?
+  bgms          BGM[]
 }
 
-// EmotionResult 모델 (감정 결과)
-model EmotionResult {
-  emotion_id        Int       @id @default(autoincrement())
-  diary_id          Int       @unique // FK (1:1 관계)
-  summary_text      String
-  main_emotion      String    @db.VarChar(20)
-  keyword_1         String?   @db.VarChar(30)
-  keyword_2         String?   @db.VarChar(30)
-  keyword_3         String?   @db.VarChar(30)
-  embedding         Float[]   // pgvector의 VECTOR(384) 대신 Float 배열 사용
-  
-  // Relations
-  // Diary 관계: 충돌 방지를 위해 인수를 제거하고, 논리적 오류 해결을 위해 Optional(?)로 변경합니다.
-  diary             Diary?    @relation 
-  objects           Object[]
-  bgms              BGM[]
-  reports           Report[]
-}
-
-// Object 모델 (보물상자)
-model Object {
-  object_id         Int       @id @default(autoincrement())
-  emotion_id        Int       // FK
-  user_id           Int       // FK
-  diary_id          Int       @unique // FK
-  object_name       String    @db.VarChar(50)
-  object_image      String
-  created_date      DateTime  @default(now()) @db.Timestamp(6)
-
-  // Relations
-  emotionResult     EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
-  user              User      @relation(fields: [user_id], references: [user_id])
-  // Diary 관계: 필수로 강제되는 쪽이므로 여기에 fields/references 인수를 추가합니다. (오류 해결)
-  diary             Diary     @relation(fields: [diary_id], references: [diary_id], onDelete: Cascade) 
-}
-
-// BGM 모델 (턴 테이블)
-model BGM {
-  bgm_id            Int       @id @default(autoincrement())
-  user_id           Int       // FK
-  emotion_id        Int       // FK
-  diary_id          Int       // FK
-  bgm_url           String
-  created_date      DateTime  @default(now()) @db.Timestamp(6)
-
-  // Relations
-  user              User      @relation(fields: [user_id], references: [user_id])
-  emotionResult     EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
-  diary             Diary     @relation(fields: [diary_id], references: [diary_id])
-}
-
-// Report 모델 (주간 리포트)
-model Report {
-  report_id         Int       @id @default(autoincrement())
-  user_id           Int       // FK
-  emotion_id        Int       // FK
-  start_date        DateTime  @db.Date
-  end_date          DateTime  @db.Date
-  summary_text      String
-  encouragement_text String
-  emotion_distribution Json    @db.JsonB
-  created_date      DateTime  @default(now()) @db.Timestamp(6)
-
-  // Relations
-  user              User      @relation(fields: [user_id], references: [user_id])
-  emotionResult     EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
-}
-
-// ClusterGroup 모델 (사용자 군집)
 model ClusterGroup {
-  cluster_id        Int       @id @default(autoincrement())
-  centroid_vector   Float[]   // pgvector의 VECTOR(384) 대신 Float 배열 사용
-  representative_emotions Int
-  representative_keywords String[]
-  user_count        Int       @default(0)
-  updated_at        DateTime  @default(now()) @db.Timestamp(6)
-  description       String
-  
-  // Relations
-  users             User[]
+  cluster_id Int @id @default(autoincrement())
+  users      User[]
 }
 
-// Notification 모델 (알림)
+model EmotionResult {
+  emotion_id Int   @id @default(autoincrement())
+  diary      Diary?
+}
+
+model Object {
+  object_id Int   @id @default(autoincrement())
+  user_id   Int
+  user      User  @relation(fields: [user_id], references: [user_id])
+  diary     Diary? @relation(fields: [object_id], references: [object_id])
+}
+
+model BGM {
+  bgm_id   Int   @id @default(autoincrement())
+  user_id  Int
+  user     User  @relation(fields: [user_id], references: [user_id])
+  diary_id Int?
+  diary    Diary? @relation(fields: [diary_id], references: [diary_id])
+}
+
+model Report {
+  report_id Int  @id @default(autoincrement())
+  user_id   Int
+  user      User @relation(fields: [user_id], references: [user_id])
+}
+
 model Notification {
-  notify_id         Int       @id @default(autoincrement())
-  user_id           Int       // FK
-  message           String
-  notify_time       DateTime  @default(now()) @db.Timestamp(6)
-  type              String    @db.VarChar(20)
-  
-  // Relations
-  user              User      @relation(fields: [user_id], references: [user_id])
+  notification_id Int  @id @default(autoincrement())
+  user_id         Int
+  user            User @relation(fields: [user_id], references: [user_id])
 }
