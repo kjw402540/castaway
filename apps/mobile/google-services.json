@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "178046587442",
+    "project_id": "castaway-wilson",
+    "storage_bucket": "castaway-wilson.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:178046587442:android:2d7dc83ac11a944b1fa22b",
+        "android_client_info": {
+          "package_name": "com.wilson.castaway"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCgBIFPrSW1uM6w9azSjytql0JQjAdAAeI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

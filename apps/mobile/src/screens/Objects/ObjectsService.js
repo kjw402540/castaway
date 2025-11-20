@@ -1,44 +1,63 @@
-// src/screens/Objects/ObjectsService.js
+// =======================================
+// ObjectsService.js
+// =======================================
 
-// 가데이터 (메모리 DB)
-let objectDB = [
+// 임시 mock 데이터 (API 생기면 여기만 교체하면 됨)
+let objectsDB = [
+  // Joy
   {
-    id: 1,
-    name: "작은 모닥불",
+    id: "1",
     emotion: "joy",
     icon: "🔥",
-    description: "따뜻한 감정을 상징하는 작은 불씨.",
+    acquiredAt: "2025-11-19",
   },
   {
-    id: 2,
-    name: "돌멩이",
-    emotion: "neutral",
-    icon: "🪨",
-    description: "평온하고 안정적인 느낌.",
+    id: "4",
+    emotion: "joy",
+    icon: "🐻",
+    acquiredAt: "2025-11-17",
   },
   {
-    id: 3,
-    name: "바람종",
+    id: "8",
+    emotion: "joy",
+    icon: "🎈",
+    acquiredAt: "2025-11-18",
+  },
+  {
+    id: "10",
+    emotion: "joy",
+    icon: "🌸",
+    acquiredAt: "2025-11-15",
+  },
+
+  // Sadness
+  {
+    id: "3",
     emotion: "sadness",
     icon: "🎐",
-    description: "슬픔이 바람에 스쳐 지나가는 이미지.",
+    acquiredAt: "2025-11-19",
+  },
+  {
+    id: "11",
+    emotion: "sadness",
+    icon: "🌧️",
+    acquiredAt: "2025-11-16",
+  },
+  {
+    id: "12",
+    emotion: "sadness",
+    icon: "💧",
+    acquiredAt: "2025-11-14",
   },
 ];
 
-// 전체 목록 가져오기
+// 전체 가져오기
 export async function getAllObjects() {
-  return [...objectDB];
+  return objectsDB;
 }
 
-// 단일 오브제
-export async function getObjectById(id) {
-  return objectDB.find((o) => o.id === id) || null;
-}
-
-// 추가 기능 (향후 확장 대비)
-export async function addObject(newObj) {
-  const nextId = objectDB.length + 1;
-  const obj = { id: nextId, ...newObj };
-  objectDB.push(obj);
-  return obj;
+// 삭제
+export async function deleteObject(id) {
+  objectsDB = objectsDB.filter((o) => o.id !== id);
+  return true;
 }

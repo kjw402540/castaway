@@ -1,3 +1,4 @@
+import React from "react";
 import { View } from "react-native";
 import { useEmotion } from "../../context/EmotionContext";
 
@@ -9,7 +10,12 @@ import SeaLayer from "./SeaLayer";
 // import WaveLayer from "./WaveLayer";
 import IslandObjectsLayer from "./IslandObjectsLayer";
 
-export default function IslandScene({ onPressChest, onPressTurntable }) {
+export default function IslandScene({ 
+  onPressChest, 
+  onPressTurntable, 
+  onPressTree, 
+  onPressRock 
+}) {
   const { emotion } = useEmotion();
 
   return (
@@ -22,8 +28,9 @@ export default function IslandScene({ onPressChest, onPressTurntable }) {
       <IslandObjectsLayer
         onPressChest={onPressChest}
         onPressTurntable={onPressTurntable}
+        onPressTree={onPressTree}
+        onPressRock={onPressRock}
       />
     </View>
   );
 }
-

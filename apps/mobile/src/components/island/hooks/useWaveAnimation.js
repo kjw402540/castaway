@@ -1,21 +1,21 @@
-import { useRef, useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Animated, Easing } from "react-native";
 
 export default function useWaveAnimation() {
-  const scale = useRef(new Animated.Value(1)).current;
+  const wave = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
-        Animated.timing(scale, {
-          toValue: 1.015,   // 1.5% 커짐
-          duration: 2200,
+        Animated.timing(wave, {
+          toValue: 1,
+          duration: 2500,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
-        Animated.timing(scale, {
-          toValue: 1,       // 원래 크기
-          duration: 2200,
+        Animated.timing(wave, {
+          toValue: 0,
+          duration: 2500,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
@@ -23,7 +23,5 @@ export default function useWaveAnimation() {
     ).start();
   }, []);
 
-  return {
-    transform: [{ scale }],
-  };
+  return wave;
 }

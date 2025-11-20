@@ -4,30 +4,24 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-nativ
 export default function ProfileRow({
   label,
   value,
-  onChangeText,    // 입력용
-  onButtonPress,   // 저장용
+  onChangeText,
+  onButtonPress,
   buttonText,
   editable = true,
 }) {
   return (
     <View style={styles.wrapper}>
-      {/* 라벨 */}
       <Text style={styles.label}>{label}</Text>
-
       <View style={styles.row}>
-        {/* 입력창 */}
         <TextInput
           value={value}
           onChangeText={onChangeText}
           editable={editable}
-          placeholder={editable ? "" : "수정 불가"}
           style={[
             styles.input,
-            { color: editable ? "#111827" : "#9CA3AF" },
+            { backgroundColor: editable ? "white" : "#F3F4F6", color: editable ? "#111827" : "#9CA3AF" },
           ]}
         />
-
-        {/* 버튼 (ex: 수정) */}
         {buttonText && (
           <TouchableOpacity
             onPress={onButtonPress}
@@ -48,34 +42,19 @@ export default function ProfileRow({
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    marginBottom: 12,
-  },
-  label: {
-    marginTop: 10,
-    fontWeight: "600",
-    color: "#111827",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 6,
-  },
+  wrapper: { marginBottom: 12 },
+  label: { fontWeight: "600", color: "#374151", marginBottom: 6, fontSize: 13 },
+  row: { flexDirection: "row", alignItems: "center" },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#D1D5DB",
+    borderColor: "#E5E7EB",
     borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     marginRight: 8,
+    fontSize: 14,
   },
-  button: {
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  buttonText: {
-    fontWeight: "600",
-  },
+  button: { borderRadius: 8, paddingHorizontal: 16, paddingVertical: 11 },
+  buttonText: { fontWeight: "600", fontSize: 13 },
 });

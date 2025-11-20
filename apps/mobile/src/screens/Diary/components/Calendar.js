@@ -1,58 +1,54 @@
 import React from "react";
+import { View, Text } from "react-native";
 import { Calendar as RNCalendar } from "react-native-calendars";
 
-export default function Calendar({ selected, markedDates, onSelectDate }) {
+export default function Calendar({ selected, markedDates, onSelectDate, maxDate }) {
   return (
     <RNCalendar
-      onDayPress={onSelectDate}
+      current={selected}          // ★★★ 핵심
+      initialDate={selected}      // ★★★ 핵심
       markedDates={markedDates}
       markingType="custom"
-      
+      onDayPress={onSelectDate}
+      maxDate={maxDate}
+
       style={{
         borderRadius: 16,
         paddingBottom: 10,
       }}
 
       theme={{
-        backgroundColor: "#FFFFFF",
-        calendarBackground: "#FFFFFF",
-
+        backgroundColor: "transparent",
+        calendarBackground: "transparent",
+        dayTextColor: "#1F2937",
+        textDisabledColor: "#D1D5DB",
         monthTextColor: "#1E3A8A",
-        arrowColor: "#1E3A8A",
-
+        textMonthFontWeight: "600",
+        textMonthFontSize: 18,
         textDayFontSize: 16,
         textDayHeaderFontSize: 13,
+        textDayFontWeight: "500",
+        textDayHeaderFontWeight: "600",
+        arrowColor: "#1E3A8A",
+      }}
 
-        // ★ 너가 요청한 header 구조 그대로 삽입
-        "stylesheet.calendar.header": {
-          header: {
-            flexDirection: "row",
-            justifyContent: "center", // 가운데 정렬
-            alignItems: "center",
-            paddingVertical: 6,
-            marginBottom: 6,
-            marginTop: 4,
-          },
-          monthText: {
-            fontSize: 23,   // 날짜보다 살짝 작음
-            fontWeight: "600",
-            color: "#1E3A8A",
-            marginHorizontal: 10, // 화살표와 간격
-          },
-          arrow: {
-            paddingHorizontal: 10, // 터치 영역
-            paddingVertical: 4,
-          },
-
-          // ★ 이미 네가 써놓은 week 확장도 함께 유지
-          week: {
-            marginTop: 14,
-            marginBottom: 13,
-            paddingHorizontal: 6,
-            flexDirection: "row",
-            justifyContent: "space-around",
-          },
-        },
+      renderHeader={(date) => {
+        const month = date.toString("MMMM");
+        const year = date.toString("yyyy");
+        return (
+          <View style={{ paddingVertical: 10 }}>
+            <Text
+              style={{
+                fontSize: 18,
+                fontWeight: "700",
+                color: "#1E3A8A",
+                textAlign: "center",
+              }}
+            >
+              {month} {year}
+            </Text>
+          </View>
+        );
       }}
     />
   );
