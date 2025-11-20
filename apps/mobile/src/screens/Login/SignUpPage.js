@@ -7,7 +7,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 
 // 서비스 연결
-import { signup } from "./AuthService";
+import { signup } from "../../services/authService";
 
 export default function SignUpPage({ navigation }) {
   const [email, setEmail] = useState("");

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Image, Dimensions } from "react-native";
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from "react-native-reanimated";
 import { FontAwesome } from "@expo/vector-icons";
-import { getDiaryByDate, deleteDiary } from "./DiaryService";
+import { getDiaryByDate, deleteDiary } from "../../services/diaryService";
 import WaveformPlayer from "./components/WaveformPlayer";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;

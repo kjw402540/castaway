@@ -8,11 +8,35 @@ export default function NavigationBar() {
   const route = useRoute();
 
   const tabs = [
-    { name: "Home", label: "Home", icon: (a) => <Ionicons name="home" size={22} color={a ? "#1E3A8A" : "#6B7280"} /> },
-    { name: "Diary", label: "Diary", icon: (a) => <Entypo name="open-book" size={22} color={a ? "#1E3A8A" : "#6B7280"} /> },
-    { name: "Objects", label: "Objects", icon: (a) => <FontAwesome5 name="box-open" size={20} color={a ? "#1E3A8A" : "#6B7280"} /> },
-    { name: "Music", label: "Music", icon: (a) => <Ionicons name="musical-note" size={22} color={a ? "#1E3A8A" : "#6B7280"} /> },
-    { name: "Profile", label: "Profile", icon: (a) => <MaterialIcons name="person" size={24} color={a ? "#1E3A8A" : "#6B7280"} /> },
+    { 
+      name: "Home", 
+      label: "Home", 
+      icon: (a) => <Ionicons name="home" size={22} color={a ? "#1E3A8A" : "#6B7280"} /> 
+    },
+
+    { 
+      name: "Diary", 
+      label: "Diary", 
+      icon: (a) => <Entypo name="open-book" size={22} color={a ? "#1E3A8A" : "#6B7280"} /> 
+    },
+
+    { 
+      name: "Objects", 
+      label: "Objects", 
+      icon: (a) => <FontAwesome5 name="box-open" size={20} color={a ? "#1E3A8A" : "#6B7280"} /> 
+    },
+
+    { 
+      name: "Mail", 
+      label: "Mail", 
+      icon: (a) => <Ionicons name="mail" size={22} color={a ? "#1E3A8A" : "#6B7280"} /> 
+    },
+
+    { 
+      name: "Profile", 
+      label: "Profile", 
+      icon: (a) => <MaterialIcons name="person" size={24} color={a ? "#1E3A8A" : "#6B7280"} /> 
+    },
   ];
 
   return (

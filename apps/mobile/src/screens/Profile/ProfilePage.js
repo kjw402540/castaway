@@ -1,20 +1,40 @@
-import React from "react";
+// screens/Profile/ProfilePage.js
+import React, { useState } from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 import { useProfile } from "./hooks/useProfile";
 import ProfileRow from "./components/ProfileRow";
 import ProfileSwitch from "./components/ProfileSwitch";
 import ToastModal from "../../components/ui/ToastModal";
-import { Ionicons } from "@expo/vector-icons"; // 아이콘 예시 (나중에 로고로 대체)
+import { useBackExit } from "../../hooks/useBackExit"; // ★ 추가
 
 export default function ProfilePage({ navigation }) {
   const profile = useProfile();
+  const [showTimePicker, setShowTimePicker] = useState(false);
+
+  // 앱 종료 훅 적용
+  useBackExit(); // ★ 추가
+
+  // 시간 변경 핸들러
+  const onChangeTime = (event, selectedDate) => {
+    setShowTimePicker(false);
+    if (selectedDate) {
+      profile.setReminderTime(selectedDate);
+    }
+  };
+
+  // 시간 포맷 (예: 오후 08:30)
+  const formatTime = (date) => {
+    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         
-        {/* 1. 헤더 (여백 축소) */}
+        {/* 1. 헤더 */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>내 정보</Text>
         </View>
@@ -40,10 +60,10 @@ export default function ProfilePage({ navigation }) {
           />
         </View>
 
-        {/* 구분선 (여백 축소) */}
+        {/* 구분선 */}
         <View style={styles.divider} />
 
-        {/* 3. 계정 연동 (슬림형 버튼) */}
+        {/* 3. 계정 연동 */}
         <View>
             <Text style={styles.sectionLabel}>계정 연동</Text>
             
@@ -79,11 +99,42 @@ export default function ProfilePage({ navigation }) {
             value={profile.effect} 
             onValueChange={profile.setEffect} 
           />
-          <ProfileSwitch 
-            label="Reminder" 
-            value={profile.reminder} 
-            onValueChange={profile.setReminder} 
-          />
+          
+          {/* Reminder 섹션 (시간 설정 포함) */}
+          <View>
+            <ProfileSwitch 
+                label="Reminder" 
+                value={profile.reminder} 
+                onValueChange={profile.setReminder} 
+            />
+
+            {/* 스위치가 켜져있을 때만 시간 설정 버튼 표시 */}
+            {profile.reminder && (
+                <View style={styles.timePickerContainer}>
+                <Text style={styles.timeLabel}>알림 시간</Text>
+                <TouchableOpacity 
+                    style={styles.timeButton} 
+                    onPress={() => setShowTimePicker(true)}
+                >
+                    <Text style={styles.timeText}>
+                    {formatTime(profile.reminderTime)}
+                    </Text>
+                </TouchableOpacity>
+                </View>
+            )}
+
+            {/* 시간 선택기 모달/팝업 */}
+            {showTimePicker && (
+                <DateTimePicker
+                value={profile.reminderTime}
+                mode="time"
+                is24Hour={false}
+                display="default"
+                onChange={onChangeTime}
+                />
+            )}
+          </View>
+
         </View>
 
       </View>
@@ -105,20 +156,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 10, // 상단 여백 최소화
+    paddingTop: 10,
   },
   header: {
-    marginBottom: 20, // 헤더 아래 여백 축소
+    marginBottom: 20,
   },
   headerTitle: {
-    fontSize: 20, // 폰트 사이즈 살짝 조정
+    fontSize: 20,
     fontWeight: "bold",
     color: "#111827",
   },
   divider: {
     height: 1,
     backgroundColor: "#F3F4F6",
-    marginVertical: 15, // 구분선 위아래 여백 축소 (핵심)
+    marginVertical: 15,
   },
   sectionLabel: {
     fontSize: 12,
@@ -126,17 +177,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: "600",
   },
-  // === 슬림 버튼 스타일 ===
   snsBtn: {
-    flexDirection: "row", // 아이콘과 텍스트 가로 정렬
+    flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "white", // 배경 흰색으로 (깔끔하게)
+    backgroundColor: "white",
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 8,
-    paddingVertical: 10, // 높이 대폭 축소 (16 -> 10)
+    paddingVertical: 10,
     paddingHorizontal: 12,
-    marginBottom: 8, // 버튼 간 간격 축소
+    marginBottom: 8,
   },
   iconPlaceholder: {
     width: 24,
@@ -150,6 +200,30 @@ const styles = StyleSheet.create({
   snsText: {
     color: "#374151",
     fontWeight: "500",
-    fontSize: 14, // 글자 크기 살짝 줄임
+    fontSize: 14,
+  },
+  timePickerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 5,
+    marginBottom: 15,
+    paddingLeft: 10,
+    paddingRight: 5,
+  },
+  timeLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  timeButton: {
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  timeText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#4B5563',
   },
 });

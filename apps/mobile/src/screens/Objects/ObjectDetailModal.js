@@ -1,5 +1,3 @@
-// src/domain/objects/ObjectDetailModal.js
-
 import React, { useRef } from "react";
 import {
   View,
@@ -9,66 +7,97 @@ import {
   Modal,
   Pressable,
 } from "react-native";
+import { PanGestureHandler } from "react-native-gesture-handler";
 import ViewShot from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 
 export default function ObjectDetailModal({
   visible,
-  onClose,
   object,
+  onClose,
+  onPrev,
+  onNext,
   onOpenDiary,
   onPlace,
+  onSaveAudio,
   onDeleteRequest,
 }) {
-  const captureRefView = useRef();
+  const captureRef = useRef();
 
   if (!visible || !object) return null;
 
-  const handleShareImage = async () => {
+  const handleShare = async () => {
     try {
-      const uri = await captureRefView.current.capture(); // ViewShot 사용
-
-      await Sharing.shareAsync(uri, {
-        dialogTitle: "오브제 이미지 공유",
-      });
-    } catch (error) {
-      console.log("Image share failed:", error);
+      const uri = await captureRef.current.capture();
+      await Sharing.shareAsync(uri);
+    } catch (e) {
+      console.log(e);
     }
   };
 
+  const onSwipe = (event) => {
+    const dx = event.nativeEvent.translationX;
+    if (dx > 80) onPrev();
+    if (dx < -80) onNext();
+  };
+
   return (
-    <Modal visible={visible} transparent animationType="fade">
+    <Modal visible={visible} transparent animationType="slide">
       <Pressable style={styles.backdrop} onPress={onClose} />
 
-      <View style={styles.modalBox}>
+      <View style={styles.sheet}>
+        {/* 닫기 */}
         <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-          <Text style={{ fontSize: 20 }}>✕</Text>
+          <Text style={{ fontSize: 26 }}>✕</Text>
         </TouchableOpacity>
 
-        {/* 여기 ViewShot으로 래핑해야 정상 캡처됨 */}
-        <ViewShot
-          ref={captureRefView}
-          options={{ format: "png", quality: 1 }}
-          style={styles.imageWrapper}
-        >
-          <View style={styles.imageCircle}>
-            <Text style={styles.bigIcon}>{object.icon}</Text>
+        <PanGestureHandler onGestureEvent={onSwipe}>
+          <View style={{ alignItems: "center", width: "100%" }}>
+            {/* 날짜 + 좌우 이동 */}
+            <View style={styles.dateRow}>
+              <TouchableOpacity onPress={onPrev}>
+                <Text style={styles.arrow}>◀</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.date}>{object.date}</Text>
+
+              <TouchableOpacity onPress={onNext}>
+                <Text style={styles.arrow}>▶</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* 오브제 */}
+            <ViewShot ref={captureRef}>
+              <View style={styles.circle}>
+                <Text style={styles.emoji}>{object.emoji}</Text>
+              </View>
+            </ViewShot>
+
+            {/* 재생 버튼 (더 작게) */}
+            <TouchableOpacity style={styles.playBtn}>
+              <Text style={styles.playIcon}>▶</Text>
+            </TouchableOpacity>
           </View>
-        </ViewShot>
+        </PanGestureHandler>
 
-        <Text style={styles.date}>{object.acquiredAt}</Text>
+        {/* 2×2 버튼 */}
+        <View style={styles.grid}>
+          <TouchableOpacity style={styles.btn} onPress={onOpenDiary}>
+            <Text style={styles.btnText}>일기 조회하기</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btn} onPress={onOpenDiary}>
-          <Text style={styles.btnText}>일기 보기</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.btn} onPress={onPlace}>
+            <Text style={styles.btnText}>섬에 배치하기</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btn} onPress={onPlace}>
-          <Text style={styles.btnText}>섬에 배치하기</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.btn} onPress={handleShare}>
+            <Text style={styles.btnText}>이미지 저장</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.btn} onPress={handleShareImage}>
-          <Text style={styles.btnText}>이미지로 저장하기</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.btn} onPress={onSaveAudio}>
+            <Text style={styles.btnText}>오디오 저장</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity style={styles.deleteBtn} onPress={onDeleteRequest}>
           <Text style={styles.deleteText}>삭제하기</Text>
@@ -84,82 +113,109 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.35)",
   },
 
-  modalBox: {
+  sheet: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#F8F9FC",
+    height: "78%",
+    backgroundColor: "#F9FAFB",
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
-    padding: 24,
+    paddingHorizontal: 28,
+    paddingTop: 32,
     alignItems: "center",
   },
 
   closeBtn: {
     position: "absolute",
-    top: 16,
+    top: 20,
     right: 20,
-    padding: 8,
   },
 
-  imageWrapper: {
-    marginTop: 10,
-    marginBottom: 12,
+  dateRow: {
+    flexDirection: "row",
     alignItems: "center",
+    marginBottom: 14,
   },
 
-  imageCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 999,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 6,
-  },
-
-  bigIcon: {
-    fontSize: 90,
+  arrow: {
+    fontSize: 20,
+    color: "#374151",
+    padding: 12,
   },
 
   date: {
-    fontSize: 13,
-    color: "#6B7280",
-    marginBottom: 18,
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#111827",
+    marginHorizontal: 10,
+  },
+
+  circle: {
+    width: 240,
+    height: 240,
+    borderRadius: 999,
+    backgroundColor: "white",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    marginTop: 10,
+    marginBottom: 16,
+  },
+
+  emoji: {
+    fontSize: 140,
+  },
+
+  playBtn: {
+    padding: 6,
+  },
+
+  playIcon: {
+    fontSize: 30,
+    color: "#0F172A",
+  },
+
+  grid: {
+    marginTop: 12,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    width: "100%",
   },
 
   btn: {
-    width: "100%",
+    width: "48%",
     backgroundColor: "#0F172A",
-    paddingVertical: 12,
+    paddingVertical: 13,
     borderRadius: 12,
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 12,
   },
 
   btnText: {
-    color: "white",
+    color: "#fff",
     fontSize: 14,
     fontWeight: "600",
   },
 
   deleteBtn: {
-    marginTop: 6,
     width: "100%",
+    borderWidth: 1.4,
+    borderColor: "#DC2626",
     paddingVertical: 12,
     borderRadius: 12,
-    borderWidth: 1.2,
-    borderColor: "#DC2626",
     alignItems: "center",
+    marginTop: 4,
   },
 
   deleteText: {
     color: "#DC2626",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
   },
 });

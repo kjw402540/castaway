@@ -6,19 +6,16 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.wilson.castaway",
       "googleServicesFile": "./GoogleService-Info.plist"
     },
-
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -28,13 +25,12 @@
       "package": "com.wilson.castaway",
       "googleServicesFile": "./google-services.json"
     },
-
     "web": {
       "favicon": "./assets/favicon.png"
     },
-
     "plugins": [
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-secure-store"
     ]
   }
 }

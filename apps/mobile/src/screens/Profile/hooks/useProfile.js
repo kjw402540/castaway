@@ -1,62 +1,115 @@
-import { useState, useEffect } from "react";
-import { getProfile, updateProfile } from "../ProfileService";
+// screens/Profile/hooks/useProfile.js
+import { useEffect, useState } from "react";
+import {
+  getUser,
+  updateUser,
+  logoutUser,
+  deleteUser,
+} from "../../../services/userService";
 
 export function useProfile() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+
   const [nickname, setNickname] = useState("");
   const [email, setEmail] = useState("");
+
   const [bgm, setBgm] = useState(false);
   const [effect, setEffect] = useState(false);
+
   const [reminder, setReminder] = useState(false);
+  const [reminderTime, setReminderTime] = useState(new Date());
+
   const [toast, setToast] = useState({ visible: false, message: "" });
 
+  const showToast = (msg) => {
+    setToast({ visible: true, message: msg });
+    setTimeout(() => setToast({ visible: false, message: "" }), 1500);
+  };
+
+  const closeToast = () => setToast({ visible: false, message: "" });
+
+  // 프로필 불러오기
   useEffect(() => {
-    async function load() {
-      setIsLoading(true);
-      const data = await getProfile();
-      
-      setNickname(data.nickname || "");
-      setEmail(data.email || "");
-      setBgm(!!data.bgm);
-      setEffect(!!data.effect);
-      setReminder(!!data.reminder);
-      
-      setIsLoading(false);
-    }
-    load();
+    loadProfile();
   }, []);
 
-  // 통합 저장 함수
-  async function save(key, value) {
-    const success = await updateProfile(key, value);
-    if (success) {
-      setToast({ visible: true, message: "변경되었습니다." });
-    } else {
-      setToast({ visible: true, message: "저장에 실패했습니다." });
+  const loadProfile = async () => {
+    try {
+      const data = await getUser();
+
+      setNickname(data.nickname || "");
+      setEmail(data.email || "");
+
+      setBgm(data.bgm ?? false);
+      setEffect(data.effect ?? false);
+
+      setReminder(data.reminder ?? false);
+      setReminderTime(
+        data.reminderTime ? new Date(data.reminderTime) : new Date()
+      );
+
+      setLoading(false);
+    } catch (err) {
+      console.log("프로필 로드 실패", err);
+      setLoading(false);
     }
-  }
+  };
+
+  // 닉네임 저장
+  const saveNickname = async () => {
+    await updateUser({ nickname });
+    showToast("닉네임이 저장되었습니다.");
+  };
+
+  // 모든 설정 저장 (원하면 한 번에 저장 가능)
+  const saveAllSettings = async () => {
+    await updateUser({
+      nickname,
+      bgm,
+      effect,
+      reminder,
+      reminderTime,
+    });
+    showToast("저장 완료");
+  };
+
+  // 로그아웃
+  const logout = async () => {
+    await logoutUser();
+    showToast("로그아웃되었습니다");
+  };
+
+  // 회원 탈퇴
+  const removeAccount = async () => {
+    await deleteUser();
+    showToast("계정이 삭제되었습니다");
+  };
 
   return {
-    isLoading,
-    
-    nickname, 
-    setNickname, 
-    saveNickname: () => save("nickname", nickname),
+    loading,
+    nickname,
+    email,
+    bgm,
+    effect,
+    reminder,
+    reminderTime,
 
-    email, 
-    setEmail, 
-    saveEmail: () => save("email", email),
+    // setters
+    setNickname,
+    setEmail,
+    setBgm,
+    setEffect,
+    setReminder,
+    setReminderTime,
 
-    bgm, 
-    setBgm: async (v) => { setBgm(v); await save("bgm", v); },
+    // actions
+    saveNickname,
+    saveAllSettings,
+    logout,
+    removeAccount,
 
-    effect, 
-    setEffect: async (v) => { setEffect(v); await save("effect", v); },
-
-    reminder, 
-    setReminder: async (v) => { setReminder(v); await save("reminder", v); },
-
+    // toast
     toast,
-    closeToast: () => setToast({ visible: false, message: "" }),
+    closeToast,
   };
 }

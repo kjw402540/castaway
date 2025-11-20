@@ -7,11 +7,12 @@ import {
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import { useBackExit } from "../../hooks/useBackExit";
 
 import Calendar from "./components/Calendar";
 import SummaryBox from "./components/SummaryBox";
 
-import { getAllDiaries, deleteDiary } from "./DiaryService";
+import { getAllDiaries, deleteDiary } from "../../services/diaryService";
 
 // 모달들
 import DiaryViewModal from "./DiaryViewModal";
@@ -34,6 +35,7 @@ function getLocalYMD(date = new Date()) {
 
 export default function DiaryPage() {
   const navigation = useNavigation();
+  useBackExit();
 
   // ★ 오늘 날짜 (UTC 쓰지 않음)
   const today = getLocalYMD();

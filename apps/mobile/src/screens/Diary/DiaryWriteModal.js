@@ -1,139 +1,196 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   Modal,
   TouchableOpacity,
   TextInput,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform
 } from "react-native";
-import { FontAwesome } from "@expo/vector-icons";
-import { saveDiary } from "./DiaryService";
+import { AntDesign } from '@expo/vector-icons';
+import { saveDiary } from "../../services/diaryService";
+
 
 export default function DiaryWriteModal({
   visible,
-  dateString,
-  initialText = "",
   onClose,
   onSaved,
+  targetDate, // 'YYYY-MM-DD' 형식의 날짜
+  mode = "write",
 }) {
-  const [text, setText] = useState("");
-
-  useEffect(() => {
-    if (visible) {
-      setText(initialText || "");
-    }
-  }, [visible, initialText]);
+  const [diaryText, setDiaryText] = useState("");
 
   const handleSave = async () => {
-    await saveDiary(dateString, text);
+    if (!diaryText.trim()) return;
+
+    await saveDiary({
+      date: targetDate,
+      text: diaryText
+    });
+
     onSaved();
+    setDiaryText("");
   };
 
-  if (!visible) return null;
+
+  // 💡 오늘 날짜를 한국어 감성 형식으로 변환 (예: 2025년 11월 20일 목요일)
+  const today = new Date(targetDate);
+  const formattedDate = today.toLocaleDateString('ko-KR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long', // 요일 추가
+  });
 
   return (
-    <Modal visible transparent animationType="fade">
-      <View style={styles.overlay}>
-        <View style={styles.box}>
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={visible}
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        style={styles.centeredView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <View style={styles.modalView}>
 
-          {/* Header */}
+          {/* 1. 헤더 (날짜 및 닫기 버튼) */}
           <View style={styles.header}>
-            <Text style={styles.title}>일기</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-              <Text style={styles.close}>×</Text>
+            <View>
+              {/* 💡 날짜 표시 */}
+              <Text style={styles.dateText}>{formattedDate}</Text>
+              {/* 💡 제목 */}
+              <Text style={styles.title}>오늘의 일기</Text>
+            </View>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <AntDesign name="close" size={24} color="#6B7280" />
             </TouchableOpacity>
           </View>
 
-          {/* Date */}
-          <Text style={styles.dateText}>{dateString}</Text>
-
+          {/* 2. 입력 박스 영역 */}
           <TextInput
-            style={styles.input}
-            multiline
-            value={text}
-            onChangeText={setText}
-            placeholder="오늘 있었던 일이나 감정을 적어보세요"
-            placeholderTextColor="#9CA3AF"
+            style={styles.inputBox}
+            placeholder="오늘 있었던 일이나 감정을 따뜻하게 적어보세요..." // 💡 감성적 문구로 변경
+            placeholderTextColor="#B0B5BB"
+            multiline={true}
+            value={diaryText}
+            onChangeText={setDiaryText}
+            editable={mode === "write"}
           />
 
-          {/* Save */}
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
-            <Text style={styles.saveText}>저장</Text>
-          </TouchableOpacity>
+          {/* 3. 저장 버튼 */}
+          {mode === "write" && (
+            <>
+              {/* 💡 감성 문구 추가 */}
+              <Text style={styles.savePrompt}>
+                오늘의 소중한 기록을 섬에 남겨보세요
+              </Text>
+              <TouchableOpacity
+                style={styles.saveButton}
+                activeOpacity={0.8}
+                onPress={handleSave}
+              >
+                <Text style={styles.buttonText}>기억 저장하기</Text>
+              </TouchableOpacity>
+            </>
+          )}
 
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
+// ----------------------------------------------------
+// 🎨 스타일시트 (감성 디자인 적용)
+// ----------------------------------------------------
+
 const styles = StyleSheet.create({
-  overlay: {
+  centeredView: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.35)",
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)', // 배경을 조금 더 어둡게
   },
-  box: {
-    width: "86%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    paddingVertical: 22,
-    paddingHorizontal: 18,
-    elevation: 6,
+
+  modalView: {
+    width: '90%',
+    // 💡 모달 높이 확장 (화면의 75% 차지)
+    height: '75%',
+    // 💡 배경색을 약간 따뜻한 톤으로 변경 (종이 느낌)
+    backgroundColor: '#FAF9F6',
+    borderRadius: 20,
+    padding: 24,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 }
+    shadowOffset: { width: 0, height: 6 }, // 그림자를 더 깊게
+    shadowOpacity: 0.3,
+    shadowRadius: 8.0,
+    elevation: 15,
   },
 
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#1E3A8A",
-  },
-  close: {
-    fontSize: 28,
-    color: "#6B7280",
-    lineHeight: 28,
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start', // 상단 정렬
+    marginBottom: 20,
   },
 
+  // 💡 날짜 스타일 (감성적인 폰트 느낌)
   dateText: {
     fontSize: 14,
-    color: "#6B7280",
-    marginBottom: 12,
-    marginLeft: 2,
+    color: '#6B7280',
+    marginBottom: 4,
+    fontWeight: '500',
   },
 
-  input: {
+  // 💡 제목 스타일
+  title: {
+    fontSize: 24,
+    fontWeight: '800', // 더 굵게
+    color: '#1F2937',
+  },
+
+  // 💡 입력 박스 스타일
+  inputBox: {
+    // 모달 배경색과 유사하게 또는 투명하게
+    backgroundColor: 'transparent',
+    width: '100%',
+    flex: 1, // 남은 공간을 모두 차지하도록
     minHeight: 150,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    borderRadius: 16,
-    padding: 14,
-    textAlignVertical: "top",
-    fontSize: 15.5,
-    color: "#1F2937",
-    backgroundColor: "#F8FAFC",
-    marginBottom: 18,
+    padding: 0, // padding은 modalView에서 충분
+    fontSize: 16,
+    lineHeight: 24, // 줄 간격 추가로 가독성 및 감성 확보
+    color: '#374151',
   },
 
-  saveBtn: {
-    backgroundColor: "#1E3A8A",
-    paddingVertical: 14,
-    borderRadius: 14,
-    alignItems: "center",
+  // 💡 감성 문구 스타일
+  savePrompt: {
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 8,
+    marginTop: 10,
   },
-  saveText: {
-    color: "white",
-    fontWeight: "700",
-    fontSize: 16,
+
+  // 💡 저장 버튼 스타일 (문구 변경에 맞게)
+  saveButton: {
+    backgroundColor: '#1E3A8A',
+    width: '100%',
+    height: 56,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
   },
+  buttonText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  closeButton: {
+    padding: 5,
+  }
 });
