@@ -1,6 +1,8 @@
+version: '3.8'
 services:
   pg:
-    image: postgres:17.6
+    # 💡 pgvector 확장이 포함된 이미지로 변경 (PostgreSQL 17 버전 사용)
+    image: pgvector/pgvector:pg17 
     container_name: castaway-pg
     environment:
       POSTGRES_USER: app
@@ -14,3 +16,10 @@ services:
       timeout: 3s
       retries: 20
     restart: unless-stopped
+    # 💾 데이터 영속성을 위해 볼륨을 추가하는 것을 권장합니다.
+    volumes:
+      - pg_data:/var/lib/postgresql/data # 새로운 볼륨 정의
+
+# 💾 볼륨 섹션 추가
+volumes:
+  pg_data:
