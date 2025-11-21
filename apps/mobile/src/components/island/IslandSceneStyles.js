@@ -40,7 +40,7 @@ export const islandStyles = StyleSheet.create({
 
   islandWrapper: {
     position: "absolute",
-    bottom: height * 0.12,     // ★ 가장 중요한 부분
+    bottom: height * 0.05,     // ★ 가장 중요한 부분
     width: ISLAND_WIDTH,
     height: ISLAND_HEIGHT,
     alignItems: "center",

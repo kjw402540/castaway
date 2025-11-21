@@ -1,15 +1,25 @@
 import { Router } from 'express';
-import diaryRoutes from './diaryRoutes.js'; // ✅ 'diary'로 변경
-import authRoutes from './authRoutes.js';
-import turntableRoutes from './turntableRoutes.js';
-import chestRoutes from './chestRoutes.js';
+
+import diaryRoutes from './diaryRoutes.js';
+import objectRoutes from './objectRoutes.js';
+import bgmRoutes from './bgmRoutes.js';
+import reportRoutes from './reportRoutes.js';
+import emotionRoutes from './emotionRoutes.js';
+import notificationRoutes from './notificationRoutes.js';
+import userRoutes from './userRoutes.js';
+import clusterRoutes from './clusterRoutes.js';  // ★ 내부용도 그냥 붙임
 
 const router = Router();
 
-// /v1 하위 경로들을 설정
-router.use('/v1/auth', authRoutes);
-router.use('/v1/diaries', diaryRoutes); // ✅ 'diary'로 변경
-router.use('/v1/turntables', turntableRoutes);
-router.use('/v1/chests', chestRoutes);
+router.use('/diary', diaryRoutes);
+router.use('/object', objectRoutes);
+router.use('/bgm', bgmRoutes);
+router.use('/report', reportRoutes);
+router.use('/emotion', emotionRoutes);
+router.use('/notification', notificationRoutes);
+router.use('/user', userRoutes);
+
+// 내부용 클러스터도 그냥 붙이자
+router.use('/cluster', clusterRoutes);
 
 export default router;

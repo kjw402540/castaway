@@ -1,15 +1,25 @@
-import { Router } from 'express';
+// src/routes/authRoutes.js
+import express from "express";
+import * as authController from "../controllers/authController.js";
 
-const router = Router();
+const router = express.Router();
 
-// POST /v1/auth/register
-router.post('/register', (req, res) => {
-  res.json({ message: '회원가입 (구현 예정)' });
-});
+/* ----------------------------------------
+   회원가입
+   POST /auth/signup
+----------------------------------------- */
+router.post("/signup", authController.signup);
 
-// POST /v1/auth/login
-router.post('/login', (req, res) => {
-  res.json({ message: '로그인 (구현 예정)' });
-});
+/* ----------------------------------------
+   로그인
+   POST /auth/login
+----------------------------------------- */
+router.post("/login", authController.login);
+
+/* ----------------------------------------
+   로그아웃 (프론트에서 토큰 삭제용)
+   POST /auth/logout
+----------------------------------------- */
+router.post("/logout", authController.logout);
 
 export default router;

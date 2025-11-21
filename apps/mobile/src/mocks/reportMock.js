@@ -30,7 +30,7 @@ let mockWeekly = {
   ],
   summary: "기쁨이 많은 한 주였어요!",
   keywords: ["프로젝트", "피곤", "학원"],
-  objects: ["🎁", "🎵"],
+  object: ["🎁", "🎵"],
 };
 
 export const reportMock = {

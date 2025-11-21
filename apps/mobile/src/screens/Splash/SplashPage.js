@@ -6,7 +6,7 @@ import { View, Text, StyleSheet } from 'react-native';
 // true: "나 개발자야! 바로 홈으로 보내줘"
 // false: "로그인 화면 디자인 확인할래"
 // =================================================
-const IS_DEV_LOGGED_IN = false; 
+const IS_DEV_LOGGED_IN = true; 
 
 export default function SplashPage({ navigation }) {
   

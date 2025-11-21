@@ -12,7 +12,7 @@ import LoginPage from "../screens/Login/LoginPage";
 import SignUpPage from "../screens/Login/SignUpPage";
 import HomePage from "../screens/Home/HomePage";
 import DiaryPage from "../screens/Diary/DiaryPage";
-import ObjectsPage from "../screens/Objects/ObjectsPage";
+import ObjectPage from "../screens/Object/ObjectPage";
 import ProfilePage from "../screens/Profile/ProfilePage";
 import ReportPage from "../screens/Report/ReportPage";
 import HistoryReportPage from "../screens/Report/HistoryReportPage";
@@ -55,10 +55,10 @@ export default function AppNavigator() {
             )}
           </Stack.Screen>
 
-          <Stack.Screen name="Objects">
+          <Stack.Screen name="Object">
             {() => (
               <MainLayout>
-                <ObjectsPage />
+                <ObjectPage />
               </MainLayout>
             )}
           </Stack.Screen>

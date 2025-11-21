@@ -11,7 +11,7 @@ import {
 import {
   getAllObjects,
   deleteObject,
-} from "../../services/objectsService";
+} from "../../services/objectService";
 
 import ObjectDetailModal from "./ObjectDetailModal";
 import { useBackExit } from "../../hooks/useBackExit";

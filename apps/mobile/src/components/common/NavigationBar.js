@@ -21,8 +21,8 @@ export default function NavigationBar() {
     },
 
     { 
-      name: "Objects", 
-      label: "Objects", 
+      name: "Object", 
+      label: "Object", 
       icon: (a) => <FontAwesome5 name="box-open" size={20} color={a ? "#1E3A8A" : "#6B7280"} /> 
     },
 

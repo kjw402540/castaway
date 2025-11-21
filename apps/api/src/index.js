@@ -1,39 +1,33 @@
-import 'dotenv/config';
-import express from 'express';
-import morgan from 'morgan';
-import cors from 'cors';
-import allRoutes from './routes/index.js';
+// src/index.js
+import express from "express";
+import cors from "cors";
+
+// Routes
+import diaryRoutes from "./routes/diaryRoutes.js";
+import objectRoutes from "./routes/objectRoutes.js";
+import bgmRoutes from "./routes/bgmRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import emotionRoutes from "./routes/emotionRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
-const PORT = process.env.PORT || 4000;
 
-// 미들웨어
-app.use(morgan('dev'));
-app.use(express.json({ limit: '1mb' }));
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); 
 
-// RN/Expo에서 접근 가능하도록 CORS 허용
-app.use(
-  cors({
-    origin: '*', // 필요 시 프론트 도메인/포트로 제한
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  })
-);
+// API 등록
+app.use("/diary", diaryRoutes);
+app.use("/object", objectRoutes);
+app.use("/bgm", bgmRoutes);
+app.use("/notification", notificationRoutes);
+app.use("/emotion", emotionRoutes);
+app.use("/report", reportRoutes);
+app.use("/user", userRoutes);
+app.use("/auth", authRoutes);
 
-// 헬스 체크
-app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'castaway-api' });
-});
-
-// API 라우트
-app.use('/api', allRoutes);
-
-// 기본 에러 핸들러
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
-});
-
-// 0.0.0.0 바인딩으로 같은 LAN의 실기기/에뮬에서도 접근 가능
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`API on :${PORT}`);
+app.listen(3000, () => {
+  console.log("API server running at http://localhost:3000");
 });
