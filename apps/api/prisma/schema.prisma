@@ -4,13 +4,85 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Entry {
   id        String   @id @default(cuid())
   text      String
-  summary   String
-  keywords  String[]  // PostgreSQL 배열
+  summary   String?
+  keywords  String[]
   createdAt DateTime @default(now())
+}
+
+model User {
+  user_id       Int       @id @default(autoincrement())
+  nickname      String    @db.VarChar(50)
+  email         String    @unique @db.VarChar(100)
+  password_hash String
+  cluster_id    Int
+  created_date  DateTime  @default(now()) @db.Timestamp(6)
+  diary_reminder DateTime? @db.Time
+  bgm_volume    Float     @default(0.5)
+  sfx_volume    Float     @default(0.5)
+  used_flag     Int       @default(0)
+
+  cluster       ClusterGroup @relation(fields: [cluster_id], references: [cluster_id])
+  diaries       Diary[]
+  objects       Object[]
+  bgms          BGM[]
+  reports       Report[]
+  notifications Notification[]
+}
+
+model Diary {
+  diary_id      Int           @id @default(autoincrement())
+  user_id       Int
+  original_text String
+  emotion_id    Int           @unique
+  object_id     Int?          @unique
+  created_date  DateTime      @default(now()) @db.Timestamp(6)
+  input_type    String        @db.VarChar(10)
+  flag          String        @db.VarChar(10)
+
+  user          User          @relation(fields: [user_id], references: [user_id])
+  emotionResult EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
+  object        Object?
+  bgms          BGM[]
+}
+
+model ClusterGroup {
+  cluster_id Int @id @default(autoincrement())
+  users      User[]
+}
+
+model EmotionResult {
+  emotion_id Int   @id @default(autoincrement())
+  diary      Diary?
+}
+
+model Object {
+  object_id Int   @id @default(autoincrement())
+  user_id   Int
+  user      User  @relation(fields: [user_id], references: [user_id])
+  diary     Diary? @relation(fields: [object_id], references: [object_id])
+}
+
+model BGM {
+  bgm_id   Int   @id @default(autoincrement())
+  user_id  Int
+  user     User  @relation(fields: [user_id], references: [user_id])
+  diary_id Int?
+  diary    Diary? @relation(fields: [diary_id], references: [diary_id])
+}
+
+model Report {
+  report_id Int  @id @default(autoincrement())
+  user_id   Int
+  user      User @relation(fields: [user_id], references: [user_id])
+}
+
+model Notification {
+  notification_id Int  @id @default(autoincrement())
+  user_id         Int
+  user            User @relation(fields: [user_id], references: [user_id])
 }
