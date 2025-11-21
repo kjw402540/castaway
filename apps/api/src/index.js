@@ -28,6 +28,6 @@ app.use("/report", reportRoutes);
 app.use("/user", userRoutes);
 app.use("/auth", authRoutes);
 
-app.listen(3000, () => {
-  console.log("API server running at http://localhost:3000");
+app.listen(4000, () => {
+  console.log("API server running at http://localhost:4000");
 });
