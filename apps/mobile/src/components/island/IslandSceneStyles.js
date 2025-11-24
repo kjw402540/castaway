@@ -18,7 +18,7 @@ export const islandStyles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    bottom: "50%",
+    bottom: "10%",
   },
 
   seaContainer: {
@@ -40,7 +40,7 @@ export const islandStyles = StyleSheet.create({
 
   islandWrapper: {
     position: "absolute",
-    bottom: height * 0.05,     // ★ 가장 중요한 부분
+    bottom: height * 0.1,     // ★ 가장 중요한 부분
     width: ISLAND_WIDTH,
     height: ISLAND_HEIGHT,
     alignItems: "center",

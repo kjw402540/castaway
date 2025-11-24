@@ -1,6 +1,16 @@
 // src/screens/hooks/useHomeFlow.js
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { getDiaryByDate } from "../../../services/diaryService";
+
+// today 문자열 만드는 공용 함수
+function getTodayYMD() {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, "0");
+  const dd = String(now.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 export default function useHomeFlow() {
   // 오늘 상태
@@ -21,6 +31,28 @@ export default function useHomeFlow() {
   const islandShown = useRef(false);
   const objectShown = useRef(false);
 
+  // ================================
+  // 1. 초기 진입 시, 이미 오늘 일기가 있는지 체크
+  // ================================
+  useEffect(() => {
+    initTodayStatus();
+  }, []);
+
+  const initTodayStatus = async () => {
+    const today = getTodayYMD();
+    const diary = await getDiaryByDate(today);
+
+    if (diary) {
+      // 오늘 일기가 이미 존재하면
+      setTodayStatus("done");
+    } else {
+      setTodayStatus("no_diary");
+    }
+  };
+
+  // ================================
+  // 2. 섬 튜토리얼
+  // ================================
   const startIslandTutorial = () => {
     if (islandShown.current) return;
     islandShown.current = true;
@@ -35,12 +67,14 @@ export default function useHomeFlow() {
     setTimeout(() => setShowTutorialObject(false), 2500);
   };
 
-  // 일기 저장 완료 후 호출
+  // ================================
+  // 3. 일기 저장 후 감정 분석 시작
+  // ================================
   const startAnalysis = async () => {
     setTodayStatus("analyzing");
     setShowAnalysis(true);
 
-    // TODO: 여기서 실제 백엔드 호출 붙이면 됨
+    // 실제 감정 분석 API 붙이는 자리
     await new Promise((resolve) => setTimeout(resolve, 900));
 
     setShowAnalysis(false);
@@ -51,12 +85,15 @@ export default function useHomeFlow() {
     setToastVisible(true);
   };
 
+  // ================================
+  // 4. 보상(오브제) 모달 닫기
+  // ================================
   const finishReward = () => {
     setShowReward(false);
     startObjectTutorial();
-    // 오늘 하루는 "오브제 있음" 상태 유지하고 싶으면 그대로 두고
-    // 감정 분석만 끝난 느낌으로 가고 싶으면 아래 주석 풀면 됨
-    // setTodayStatus("done");
+
+    // 오늘은 일기 있음 상태로 고정
+    setTodayStatus("done");
   };
 
   const hideToast = () => {
@@ -69,8 +106,10 @@ export default function useHomeFlow() {
     showReward,
     toastVisible,
     toastMessage,
+
     showTutorialIsland,
     showTutorialObject,
+
     startIslandTutorial,
     startAnalysis,
     finishReward,

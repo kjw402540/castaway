@@ -1,7 +1,7 @@
 // src/mocks/userMock.js
 
 let TEMP_USER = {
-  nickname: "쏘뇽님",
+  nickname: "윌슨",
   bio: "오늘도 나의 섬을 여행 중...",
   birth: "1997-03-13",
   email: "test@example.com",

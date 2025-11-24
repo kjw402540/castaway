@@ -9,8 +9,26 @@ export const getAllDiaries = () =>
 export const getDiaryByDate = (date) =>
   USE_API ? diaryApi.getByDate(date) : diaryMock.getByDate(date);
 
-export const saveDiary = (data) =>
-  USE_API ? diaryApi.save(data) : diaryMock.save(data);
+// ---- 전역 업데이트 이벤트 ----
+let listeners = new Set();
 
-export const deleteDiary = (date) =>
-  USE_API ? diaryApi.delete(date) : diaryMock.delete(date);
+export function subscribeDiaryUpdate(fn) {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+function notifyDiaryUpdate() {
+  listeners.forEach((fn) => fn());
+}
+
+export const saveDiary = (data) => {
+  const result = USE_API ? diaryApi.save(data) : diaryMock.save(data);
+  notifyDiaryUpdate();
+  return result;
+};
+
+export const deleteDiary = (date) => {
+  const result = USE_API ? diaryApi.delete(date) : diaryMock.delete(date);
+  notifyDiaryUpdate();
+  return result;
+};

@@ -1,11 +1,10 @@
 // src/screens/Mail/hooks/useMail.js
-
 import { useState, useEffect, useCallback } from "react";
 import { 
-    getMails, 
-    deleteAllMails, 
-    deleteSelectedMails,
-    markMailAsRead 
+  getAllMail, 
+  deleteMail, 
+  markAsRead,
+  subscribeMailUpdate
 } from "../../../services/mailService";
 
 export function useMail() {
@@ -13,18 +12,17 @@ export function useMail() {
   const [selectedMailIds, setSelectedMailIds] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  
-  // 모달 상태 추가
-  const [detailMail, setDetailMail] = useState(null); 
 
-  // 메일 목록 불러오기
+  const [detailMail, setDetailMail] = useState(null);
+
+  // -------------------------------
+  // 메일 로드
+  // -------------------------------
   const loadMails = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await getMails();
+      const data = await getAllMail();
       setMails(data);
-    } catch (error) {
-      console.error("메일 로드 실패:", error);
     } finally {
       setIsLoading(false);
     }
@@ -32,83 +30,93 @@ export function useMail() {
 
   useEffect(() => {
     loadMails();
+    
+    // 메일 업데이트 구독
+    const unsubscribe = subscribeMailUpdate(loadMails);
+    return () => unsubscribe();
   }, [loadMails]);
 
-  // 메일 선택/해제 토글
-  const toggleSelect = useCallback((mailId) => {
-    setSelectedMailIds(prevIds => {
-      if (prevIds.includes(mailId)) {
-        return prevIds.filter(id => id !== mailId);
-      } else {
-        return [...prevIds, mailId];
-      }
-    });
+  // -------------------------------
+  // 선택/해제
+  // -------------------------------
+  const toggleSelect = useCallback((id) => {
+    setSelectedMailIds((prev) =>
+      prev.includes(id)
+        ? prev.filter((v) => v !== id)
+        : [...prev, id]
+    );
   }, []);
 
-  // 전체 선택/해제 토글 (추가된 함수)
   const toggleSelectAll = useCallback(() => {
     if (selectedMailIds.length === mails.length && mails.length > 0) {
-      // 전체 해제
       setSelectedMailIds([]);
     } else {
-      // 전체 선택
-      setSelectedMailIds(mails.map(mail => mail.id));
+      setSelectedMailIds(mails.map((m) => m.id));
     }
-  }, [selectedMailIds.length, mails]);
+  }, [selectedMailIds, mails]);
 
-  // 모두 지우기 실행
+  // -------------------------------
+  // 전체 삭제
+  // -------------------------------
   const handleSelectAllDelete = useCallback(async () => {
-    if (mails.length === 0) return;
-    
-    const success = await deleteAllMails();
-    if (success) {
-      setMails([]);
-      setIsEditMode(false); 
-      setSelectedMailIds([]);
-    }
-  }, [mails.length]);
+    await deleteMail("all");
+    setMails([]);
+    setSelectedMailIds([]);
+    setIsEditMode(false);
+  }, []);
 
-  // 선택 지우기 실행
+  // -------------------------------
+  // 선택 삭제
+  // -------------------------------
   const handleDeleteSelected = useCallback(async () => {
     if (selectedMailIds.length === 0) return;
-
-    const success = await deleteSelectedMails(selectedMailIds);
-    if (success) {
-      setMails(prevMails => prevMails.filter(mail => !selectedMailIds.includes(mail.id)));
-      setSelectedMailIds([]);
-      setIsEditMode(false); 
-    }
+    
+    await deleteMail(selectedMailIds);
+    setMails((prev) => prev.filter((m) => !selectedMailIds.includes(m.id)));
+    setSelectedMailIds([]);
+    setIsEditMode(false);
   }, [selectedMailIds]);
 
-  // 읽음 처리 핸들러
-  const handleMarkAsRead = useCallback(async (mailId) => {
-    // 서버에 업데이트 요청
-    const success = await markMailAsRead(mailId);
+  // -------------------------------
+  // 읽음 처리
+  // -------------------------------
+  const handleMarkAsRead = useCallback(async (id) => {
+    await markAsRead(id);
 
-    if (success) {
-      // UI 상태 업데이트
-      setMails(prevMails => 
-        prevMails.map(mail => 
-          mail.id === mailId ? { ...mail, read: true } : mail
-        )
-      );
+    setMails((prev) =>
+      prev.map((m) =>
+        m.id === id ? { ...m, read: true } : m
+      )
+    );
+    
+    // detailMail도 업데이트
+    if (detailMail?.id === id) {
+      setDetailMail((prev) => prev ? { ...prev, read: true } : null);
     }
-  }, []);
+  }, [detailMail]);
+
+  // -------------------------------
+  // 네비게이션 빨간 뱃지용 unread count
+  // -------------------------------
+  const unreadCount = mails.filter((m) => !m.read).length;
 
   return {
     mails,
+    unreadCount,
+
     selectedMailIds,
     isEditMode,
     isLoading,
-    
-    detailMail, 
-    setDetailMail, 
+
+    detailMail,
+    setDetailMail,
 
     toggleSelect,
-    toggleSelectAll, // 추가된 함수 export
+    toggleSelectAll,
+
     setIsEditMode,
     handleSelectAllDelete,
     handleDeleteSelected,
-    handleMarkAsRead, 
+    handleMarkAsRead,
   };
 }

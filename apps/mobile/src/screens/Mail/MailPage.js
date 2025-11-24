@@ -4,7 +4,8 @@ import React from "react";
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from "react-native";
 import { useMail } from "./hooks/useMail"; 
 import MailDetailModal from "./MailDetailModal"; 
-import { useBackExit } from "../../hooks/useBackExit"; 
+import { useBackExit } from "../../hooks/useBackExit";
+import { formatMailDate } from "../../utils/formatMailDate";
 
 
 // 임시 아이콘 
@@ -52,7 +53,7 @@ export default function MailPage() {
                     <Text style={[styles.title, item.read && styles.titleRead]} numberOfLines={1}>
                         {item.title}
                     </Text>
-                    <Text style={styles.date}>{item.date}</Text>
+                    <Text style={styles.date}>{formatMailDate(item.date)}</Text>
                 </View>
             </TouchableOpacity>
         );

@@ -1,6 +1,6 @@
 // src/config/apiConfig.js
 
-export const USE_API = true; 
+export const USE_API = false; 
 // export const BASE_URL = "http://10.0.2.2:3000/api"; 
 export const BASE_URL = process.env.EXPO_PUBLIC_API_BASE; 
 
