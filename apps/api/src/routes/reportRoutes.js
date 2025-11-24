@@ -4,16 +4,12 @@ import * as reportController from "../controllers/reportController.js";
 
 const router = express.Router();
 
-// GET /report/weekly
 router.get("/weekly", reportController.getWeekly);
-
-// GET /report/history
 router.get("/history", reportController.getHistory);
 
-// GET /report/:id
-router.get("/:id", reportController.getById);
+// 단일 리포트 상세 조회  ← 수정됨
+router.get("/item/:id", reportController.getById);
 
-// POST /report
 router.post("/", reportController.save);
 
 export default router;

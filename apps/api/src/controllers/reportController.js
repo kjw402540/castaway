@@ -3,9 +3,8 @@ import * as reportService from "../services/reportService.js";
 
 const USER_ID = 1;
 
-
 /* --------------------------------------------------------
-   이번 주 리포트 조회
+   이번 주 리포트
 -------------------------------------------------------- */
 export const getWeekly = async (req, res, next) => {
   try {
@@ -16,9 +15,8 @@ export const getWeekly = async (req, res, next) => {
   }
 };
 
-
 /* --------------------------------------------------------
-   전체 히스토리 조회
+   전체 히스토리
 -------------------------------------------------------- */
 export const getHistory = async (req, res, next) => {
   try {
@@ -29,23 +27,20 @@ export const getHistory = async (req, res, next) => {
   }
 };
 
-
 /* --------------------------------------------------------
-   단일 리포트 상세 조회
+   단일 리포트
 -------------------------------------------------------- */
 export const getById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const report = await reportService.getById(Number(id));
+    const report = await reportService.getById(req.params.id);
     res.json(report);
   } catch (err) {
     next(err);
   }
 };
 
-
 /* --------------------------------------------------------
-   리포트 생성 (AI 분석 결과 저장)
+   리포트 저장
 -------------------------------------------------------- */
 export const save = async (req, res, next) => {
   try {

@@ -1,13 +1,14 @@
 // src/controllers/userController.js
 import * as userService from "../services/userService.js";
 
+const USER_ID = 1;
+
 /* ----------------------------------------
    내 정보 조회
 ----------------------------------------- */
 export const get = async (req, res, next) => {
   try {
-    const userId = 1; // MVP 고정
-    const user = await userService.get(userId);
+    const user = await userService.get(USER_ID);
     res.json(user);
   } catch (err) {
     next(err);
@@ -19,8 +20,7 @@ export const get = async (req, res, next) => {
 ----------------------------------------- */
 export const update = async (req, res, next) => {
   try {
-    const userId = 1; // MVP 고정
-    const updated = await userService.update(userId, req.body);
+    const updated = await userService.update(USER_ID, req.body);
     res.json(updated);
   } catch (err) {
     next(err);
@@ -28,12 +28,11 @@ export const update = async (req, res, next) => {
 };
 
 /* ----------------------------------------
-   회원 탈퇴
+   회원 탈퇴 (soft delete)
 ----------------------------------------- */
 export const remove = async (req, res, next) => {
   try {
-    const userId = 1; // MVP 고정
-    const removed = await userService.remove(userId);
+    const removed = await userService.remove(USER_ID);
     res.json({ ok: true, removed });
   } catch (err) {
     next(err);

@@ -1,7 +1,10 @@
+// src/services/objectService.js
 import prisma from "../lib/prisma.js";
 import { toKST } from "../utils/date.js";
 
-// 날짜별 오브제
+/* ----------------------------------------
+   날짜별 오브제 조회
+----------------------------------------- */
 export const getByDate = async (userId, ymd) => {
   const target = toKST(ymd);
 
@@ -14,13 +17,15 @@ export const getByDate = async (userId, ymd) => {
       },
     },
     include: {
-      emotionResult: true,
+      emotion: true, // ✔ Object relation은 emotion이 맞음
       diary: true,
     },
   });
 };
 
-// 전체
+/* ----------------------------------------
+   전체 조회
+----------------------------------------- */
 export const getAll = (userId) => {
   return prisma.object.findMany({
     where: { user_id: userId },
@@ -28,18 +33,22 @@ export const getAll = (userId) => {
   });
 };
 
-// 단일 조회
+/* ----------------------------------------
+   단일 조회
+----------------------------------------- */
 export const getById = (id) => {
   return prisma.object.findUnique({
-    where: { object_id: id },
+    where: { object_id: Number(id) },
     include: {
-      emotionResult: true,
+      emotion: true,
       diary: true,
     },
   });
 };
 
-// 생성 (workflow에서 사용)
+/* ----------------------------------------
+   생성 (workflow)
+----------------------------------------- */
 export const create = (data) => {
   return prisma.object.create({ data });
 };

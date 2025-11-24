@@ -1,21 +1,12 @@
 // src/services/emotionService.js
-import prisma from "../lib/prisma.js";
 
-/* ----------------------------------------
-   감정 분석 placeholder
-   실제 모델 연결은 나중에 추가
------------------------------------------ */
-export const analyze = async (text) => {
-  if (!text) {
-    throw new Error("text는 필수입니다.");
-  }
+// 지금은 저장 기능을 잠시 비활성화.
+// 필요할 때 다시 붙이면 됨.
 
-  // 아주 단순한 감정 placeholder
-  const result = {
-    emotion: "neutral",
-    summary: "(아직 감정 분석 모델 없음)",
-    keywords: [],
-  };
+export async function save(data) {
+  return null;
+}
 
-  return result;
-};
+export async function getByDiaryId(diary_id) {
+  return null;
+}
