@@ -1,6 +1,5 @@
-// screens/Profile/ProfilePage.js
 import React, { useState } from "react";
-import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
+import { View, TouchableOpacity, Text, StyleSheet, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import DateTimePicker from '@react-native-community/datetimepicker';
 
@@ -8,16 +7,14 @@ import { useProfile } from "./hooks/useProfile";
 import ProfileRow from "./components/ProfileRow";
 import ProfileSwitch from "./components/ProfileSwitch";
 import ToastModal from "../../components/ui/ToastModal";
-import { useBackExit } from "../../hooks/useBackExit"; // ★ 추가
+import { useBackExit } from "../../hooks/useBackExit";
 
 export default function ProfilePage({ navigation }) {
   const profile = useProfile();
   const [showTimePicker, setShowTimePicker] = useState(false);
 
-  // 앱 종료 훅 적용
-  useBackExit(); // ★ 추가
+  useBackExit();
 
-  // 시간 변경 핸들러
   const onChangeTime = (event, selectedDate) => {
     setShowTimePicker(false);
     if (selectedDate) {
@@ -25,14 +22,50 @@ export default function ProfilePage({ navigation }) {
     }
   };
 
-  // 시간 포맷 (예: 오후 08:30)
   const formatTime = (date) => {
     return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
   };
 
+  // 로그아웃 핸들러
+  const handleLogoutPress = () => {
+    Alert.alert(
+      "로그아웃",
+      "정말 로그아웃 하시겠습니까?",
+      [
+        { text: "취소", style: "cancel" },
+        { 
+          text: "로그아웃", 
+          style: "destructive",
+          onPress: () => profile.logout() 
+        },
+      ]
+    );
+  };
+
+  // 회원탈퇴 핸들러
+  const handleDeletePress = () => {
+    Alert.alert(
+      "회원 탈퇴",
+      "탈퇴 시 모든 데이터가 삭제됩니다.\n정말 탈퇴하시겠습니까?",
+      [
+        { text: "취소", style: "cancel" },
+        { 
+          text: "탈퇴하기", 
+          style: "destructive",
+          onPress: () => profile.deleteAccount() 
+        },
+      ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      {/* 👇 수정됨: showsVerticalScrollIndicator={false} 추가 */}
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer}
+        showsVerticalScrollIndicator={false} 
+        keyboardShouldPersistTaps="handled"
+      >
         
         {/* 1. 헤더 */}
         <View style={styles.header}>
@@ -66,7 +99,6 @@ export default function ProfilePage({ navigation }) {
         {/* 3. 계정 연동 */}
         <View>
             <Text style={styles.sectionLabel}>계정 연동</Text>
-            
             {/* Google Button */}
             <TouchableOpacity style={styles.snsBtn}>
                 <View style={styles.iconPlaceholder} >
@@ -78,7 +110,7 @@ export default function ProfilePage({ navigation }) {
             {/* Kakao Button */}
             <TouchableOpacity style={styles.snsBtn}>
                 <View style={[styles.iconPlaceholder, {backgroundColor: '#FEE500'}]} >
-                     <Text style={{fontSize:12}}>K</Text> 
+                      <Text style={{fontSize:12}}>K</Text> 
                 </View>
                 <Text style={styles.snsText}>Kakao 계정 연동하기</Text>
             </TouchableOpacity>
@@ -100,15 +132,12 @@ export default function ProfilePage({ navigation }) {
             onValueChange={profile.setEffect} 
           />
           
-          {/* Reminder 섹션 (시간 설정 포함) */}
           <View>
             <ProfileSwitch 
                 label="Reminder" 
                 value={profile.reminder} 
                 onValueChange={profile.setReminder} 
             />
-
-            {/* 스위치가 켜져있을 때만 시간 설정 버튼 표시 */}
             {profile.reminder && (
                 <View style={styles.timePickerContainer}>
                 <Text style={styles.timeLabel}>알림 시간</Text>
@@ -122,8 +151,6 @@ export default function ProfilePage({ navigation }) {
                 </TouchableOpacity>
                 </View>
             )}
-
-            {/* 시간 선택기 모달/팝업 */}
             {showTimePicker && (
                 <DateTimePicker
                 value={profile.reminderTime}
@@ -134,10 +161,22 @@ export default function ProfilePage({ navigation }) {
                 />
             )}
           </View>
-
         </View>
 
-      </View>
+        {/* 5. 계정 관리 (로그아웃 / 회원탈퇴) */}
+        <View style={styles.footerContainer}>
+            <TouchableOpacity onPress={handleLogoutPress} style={styles.footerButton}>
+                <Text style={styles.logoutText}>로그아웃</Text>
+            </TouchableOpacity>
+            
+            <View style={styles.verticalDivider} />
+            
+            <TouchableOpacity onPress={handleDeletePress} style={styles.footerButton}>
+                <Text style={styles.deleteText}>회원탈퇴</Text>
+            </TouchableOpacity>
+        </View>
+
+      </ScrollView>
 
       <ToastModal
         visible={profile.toast.visible}
@@ -153,10 +192,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
   },
-  container: {
-    flex: 1,
+  scrollContainer: { 
     paddingHorizontal: 24,
     paddingTop: 10,
+    paddingBottom: 40, 
   },
   header: {
     marginBottom: 20,
@@ -225,5 +264,33 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#4B5563',
+  },
+  footerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 30,
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  footerButton: {
+    padding: 10,
+  },
+  verticalDivider: {
+    width: 1,
+    height: 14,
+    backgroundColor: '#D1D5DB',
+    marginHorizontal: 15,
+  },
+  logoutText: {
+    fontSize: 13,
+    color: '#6B7280', 
+    textDecorationLine: 'underline',
+  },
+  deleteText: {
+    fontSize: 13,
+    color: '#EF4444', 
+    textDecorationLine: 'underline',
   },
 });

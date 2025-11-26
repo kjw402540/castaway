@@ -13,6 +13,7 @@ import {
   deleteObject,
 } from "../../services/objectService";
 
+import DiaryViewModal from "../Diary/DiaryViewModal";
 import ObjectDetailModal from "./ObjectDetailModal";
 import { useBackExit } from "../../hooks/useBackExit";
 import { useNavigation } from "@react-navigation/native";
@@ -21,6 +22,8 @@ export default function ObjectsPage() {
   const [groups, setGroups] = useState({});
   const [flatList, setFlatList] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [diaryModalVisible, setDiaryModalVisible] = useState(false);
+  const [diaryDate, setDiaryDate] = useState(null);
 
   const navigation = useNavigation();
 
@@ -65,10 +68,11 @@ export default function ObjectsPage() {
     setSelectedItem(null);
   };
 
-  // 일기 이동
+  // 일기 이동 -> 일기 모달 바로 띄우기
   const handleOpenDiary = (date) => {
-    setSelectedItem(null);
-    navigation.navigate("Diary", { date });
+    setSelectedItem(null);        
+    setDiaryDate(date);           
+    setDiaryModalVisible(true);   
   };
 
   // 섬 배치 (나중에 구현)
@@ -126,6 +130,13 @@ export default function ObjectsPage() {
           onDeleteRequest={() => handleDelete(selectedItem.id)}
         />
       )}
+
+    <DiaryViewModal
+      visible={diaryModalVisible}
+      dateString={diaryDate}              
+      onClose={() => setDiaryModalVisible(false)}
+      onEdit={undefined}                   
+      />
     </ScrollView>
   );
 }

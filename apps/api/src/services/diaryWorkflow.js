@@ -1,10 +1,12 @@
 // src/services/diaryWorkflow.js
 
+import * as emotionAIService from "./emotionAIService.js";
 import * as emotionService from "./emotionService.js";
 import * as objectService from "./objectService.js";
 import * as bgmService from "./bgmService.js";
 import * as notificationService from "./notificationService.js";
-import * as clusterService from "./clusterService.js";
+import * as mailService from "../services/mailService.js";
+
 
 /* -------------------------------------------------------------
    일기 저장 직후 실행되는 전체 파이프라인
@@ -13,7 +15,7 @@ export async function afterDiarySaved(diary) {
   try {
     console.log("[WORKFLOW] started for diary:", diary.diary_id);
 
-    // 1) 감정 분석 (AI 모델 자리 비워둠)
+    // 1) 감정 분석
     const emotionResult = await analyzeEmotion(diary);
 
     // 2) 오브제 생성
@@ -23,13 +25,15 @@ export async function afterDiarySaved(diary) {
     const bgmItem = await createBgm(diary, emotionResult);
 
     // 4) 개인 알림 생성
-    await sendUserNotification(diary, emotionResult, objectItem, bgmItem);
+    await sendUserNotification(diary, emotionResult);
 
-    // 5) 같은 클러스터 사람들에게 공유 (선택)
-    // await clusterBroadcast(diary, emotionResult, objectItem);
+    // 5) 메일 생성
+    await sendMail(diary, emotionResult);
+
 
     console.log("[WORKFLOW] finished");
     return true;
+
   } catch (err) {
     console.error("[WORKFLOW ERROR]", err);
     return false;
@@ -37,66 +41,62 @@ export async function afterDiarySaved(diary) {
 }
 
 /* -------------------------------------------------------------
-   1) 감정 분석 (모델 자리만 남겨둠)
+   1) 감정 분석 + EmotionResult DB 저장
 -------------------------------------------------------------- */
 async function analyzeEmotion(diary) {
-  const text = diary.original_text;
+  const ai = await emotionAIService.analyze(diary.original_text);
 
-  // AI 모델은 나중에 직접 연결할 자리
-  // 지금은 placeholder
   const resultData = {
     diary_id: diary.diary_id,
-    summary_text: "(아직 분석 로직 없음)",
-    main_emotion: "neutral",
-    keyword_1: null,
-    keyword_2: null,
-    keyword_3: null,
-    embedding: [], // pgvector 제거했으므로 Float[]
+    summary_text: ai.summary ?? "(요약 없음)",
+    main_emotion: ai.main_emotion ?? 2,
+    keyword_1: ai.keywords?.[0] ?? "",
+    keyword_2: ai.keywords?.[1] ?? "",
+    keyword_3: ai.keywords?.[2] ?? "",
+    embedding: ai.embedding ?? new Array(384).fill(0),
   };
 
-  // ☆ EmotionResult UPSERT
   const emotionResult = await emotionService.save(resultData);
-
   return emotionResult;
 }
 
 /* -------------------------------------------------------------
-   2) 오브제 생성 (하루 1개)
+   2) 오브제 생성
 -------------------------------------------------------------- */
 async function createObject(diary, emotionResult) {
   try {
+    const objectName = pickObjectNameByEmotion(emotionResult.main_emotion);
+
     const data = {
       diary_id: diary.diary_id,
       user_id: diary.user_id,
       emotion_id: emotionResult.emotion_id,
-      object_name: selectObjectName(emotionResult.main_emotion),
-      object_image: "", // 이미지 경로 나중에 넣는 자리
+      object_name: objectName,
+      object_image: "",
     };
 
-    // diary_id UNIQUE → 자동으로 하루 1개
-    const objectItem = await objectService.create(data);
+    return await objectService.create(data);
 
-    return objectItem;
   } catch (err) {
     console.error("[WORKFLOW][OBJECT] error", err);
     return null;
   }
 }
 
-// 아주 단순한 오브제 선택 (나중에 정교하게 바꿔도 됨)
-function selectObjectName(emotion) {
+/* 감정(int) 기반 오브제 이름 선택 */
+function pickObjectNameByEmotion(mainEmotionInt) {
   const map = {
-    joy: "light_orb",
-    sadness: "blue_drop",
-    anger: "fire_stone",
-    neutral: "shell",
-    fear: "fog_fragment",
+    0: "fire_stone",
+    1: "light_orb",
+    2: "shell",
+    3: "blue_drop",
+    4: "fog_fragment",
   };
-  return map[emotion] ?? "shell";
+  return map[mainEmotionInt] ?? "shell";
 }
 
 /* -------------------------------------------------------------
-   3) BGM 생성 (placeholder)
+   3) BGM 생성
 -------------------------------------------------------------- */
 async function createBgm(diary, emotionResult) {
   try {
@@ -104,11 +104,11 @@ async function createBgm(diary, emotionResult) {
       diary_id: diary.diary_id,
       user_id: diary.user_id,
       emotion_id: emotionResult.emotion_id,
-      bgm_url: "", // 나중에 AIGen 붙일 자리
+      bgm_url: "",
     };
 
-    const bgm = await bgmService.create(data);
-    return bgm;
+    return await bgmService.create(data);
+
   } catch (err) {
     console.error("[WORKFLOW][BGM] error", err);
     return null;
@@ -116,44 +116,43 @@ async function createBgm(diary, emotionResult) {
 }
 
 /* -------------------------------------------------------------
-   4) 사용자 개인 알림
+   4) 사용자 알림 생성
+   DB 스펙: INT
+   0 = 리포트, 1 = 오브제, 2 = 일반 알림
 -------------------------------------------------------------- */
-async function sendUserNotification(diary, emotionResult, objectItem, bgmItem) {
+async function sendUserNotification(diary, emotionResult) {
   try {
-    const msg = `오늘의 감정 분석이 완료되었습니다. (${emotionResult.main_emotion})`;
+    const msg = `오늘의 감정 분석이 완료되었습니다. (감정: ${emotionResult.main_emotion})`;
 
     await notificationService.create({
       user_id: diary.user_id,
       message: msg,
-      type: "system",
+      type: 2,    // INT
     });
 
     return true;
+
   } catch (err) {
     console.error("[WORKFLOW][NOTIFICATION] error", err);
     return false;
   }
 }
 
-/* -------------------------------------------------------------
-   5) 같은 Cluster 사용자들에게도 공유 (옵션)
--------------------------------------------------------------- */
-async function clusterBroadcast(diary, emotionResult, objectItem) {
+// -------------------------------------------------------------
+// 5) 감정 분석 완료 → Mail 생성
+// -------------------------------------------------------------
+async function sendMail(diary, emotionResult) {
   try {
-    const userClusterId = diary.user.cluster_id;
-    const users = await clusterService.getUsers(userClusterId);
+    const emotionName = ["분노/혐오", "기쁨", "중립", "슬픔", "놀람/공포"][emotionResult.main_emotion];
 
-    // 본인 제외한 같은 그룹 유저들에게 랜덤 오브제 알림
-    for (const u of users) {
-      if (u.user_id === diary.user_id) continue;
+    const mailData = {
+      user_id: diary.user_id,
+      title: "오늘의 감정 분석 결과가 도착했어요",
+      content: `오늘 감정은 '${emotionName}'로 분석되었어요.\n키워드: ${emotionResult.keyword_1}, ${emotionResult.keyword_2}, ${emotionResult.keyword_3}`,
+    };
 
-      await notificationService.create({
-        user_id: u.user_id,
-        message: "새로운 감정 오브제가 도착했습니다!",
-        type: "cluster",
-      });
-    }
+    await mailService.create(mailData);
   } catch (err) {
-    console.error("[WORKFLOW][CLUSTER] error", err);
+    console.error("[WORKFLOW][MAIL] error", err);
   }
 }

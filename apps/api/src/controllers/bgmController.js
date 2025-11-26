@@ -29,7 +29,8 @@ export const getAll = async (req, res, next) => {
 };
 
 /* ----------------------------------------
-   BGM 삭제  (→ diary 삭제 → object/bgm 모두 사라짐)
+   BGM 삭제 버튼 = 그 일기 세트 삭제
+   (Diary 삭제 → cascade로 BGM/Object/EmotionResult 자동 삭제)
 ----------------------------------------- */
 export const remove = async (req, res, next) => {
   try {
@@ -40,7 +41,8 @@ export const remove = async (req, res, next) => {
 
     const diaryId = bgm.diary_id;
 
-    const removedDiary = await diaryService.remove(diaryId);
+    // Diary 삭제 → cascade로 BGM/Emotion/Object 자동 삭제
+    const removedDiary = await diaryService.remove(Number(diaryId));
 
     res.json({ ok: true, removed: removedDiary });
   } catch (err) {

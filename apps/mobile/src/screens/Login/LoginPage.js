@@ -1,26 +1,28 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+// src/screens/Login/LoginPage.js
 
-const { width } = Dimensions.get("window");
+import React from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function LoginPage({ navigation }) {
 
-  // 로그인 버튼 클릭 시 실행되는 함수 (개발용 시뮬레이션)
-  const handleLogin = (platform) => {
-    console.log(`🚀 ${platform} 로그인 시도...`);
+  const handleKakaoLogin = () => {
+    Alert.alert("준비 중", "네이티브 빌드 후 활성화 예정!");
+  };
 
-    // [개발용] API 연동 전이므로, 버튼 누르면 무조건 홈으로 이동시킴
-    // replace를 써야 뒤로가기 했을 때 다시 로그인 화면으로 안 돌아옴
-    navigation.replace("Home");
+  const handleGoogleLogin = () => {
+    Alert.alert("준비 중", "구글 로그인 추후 연동 예정");
   };
 
   return (
     <SafeAreaView style={styles.container}>
-
-      {/* 1. 상단 브랜딩 영역 (로고 + 슬로건) */}
       <View style={styles.logoArea}>
-        {/* 로고 아이콘 (임시로 이모지 사용, 나중에 이미지로 교체 가능) */}
         <View style={styles.logoPlaceholder}>
           <Text style={{ fontSize: 50 }}>🏝️</Text>
         </View>
@@ -31,38 +33,51 @@ export default function LoginPage({ navigation }) {
         </Text>
       </View>
 
-      {/* 2. 하단 버튼 영역 */}
       <View style={styles.buttonArea}>
-
-        {/* 카카오 로그인 */}
+        {/* 1. 카카오 */}
         <TouchableOpacity
-          style={[styles.socialBtn, { backgroundColor: "#FEE500", borderWidth: 0 }]}
-          onPress={() => handleLogin("Kakao")}
+          style={[
+            styles.socialBtn,
+            { backgroundColor: "#FEE500", borderWidth: 0 },
+          ]}
+          onPress={handleKakaoLogin}
           activeOpacity={0.8}
         >
-          {/* 카카오 심볼은 텍스트나 이미지로 대체 가능 */}
-          <Text style={[styles.socialText, { color: "#3C1E1E" }]}>카카오로 3초 만에 시작하기</Text>
+          <Text style={[styles.socialText, { color: "#3C1E1E" }]}>
+            카카오로 시작하기
+          </Text>
         </TouchableOpacity>
 
-        {/* 구글 로그인 */}
+        {/* 2. 구글 */}
         <TouchableOpacity
           style={styles.socialBtn}
-          onPress={() => handleLogin("Google")}
+          onPress={handleGoogleLogin}
           activeOpacity={0.8}
         >
-          <Text style={styles.socialText}>Google로 계속하기</Text>
+          <Text style={styles.socialText}>Google로 시작하기</Text>
         </TouchableOpacity>
 
-        {/* 이메일 가입 링크 */}
+        {/* 3. 이메일 로그인 (간격 수정됨: marginTop 제거) */}
         <TouchableOpacity
-          style={styles.emailLink}
-          onPress={() => navigation.navigate("SignUp")} // [연결]
+          style={styles.socialBtn} // 👈 여기! marginTop 제거함
+          onPress={() => navigation.navigate("SignIn")}
+          activeOpacity={0.8}
         >
-          <Text style={styles.emailText}>이메일로 회원가입</Text>
+          <Text style={styles.socialText}>이메일로 로그인</Text>
         </TouchableOpacity>
+
+        {/* 4. 하단 회원가입 링크 */}
+        <View style={styles.signupTextContainer}>
+            <Text style={styles.signupGuideText}>아직 계정이 없으신가요?</Text>
+            <TouchableOpacity
+                onPress={() => navigation.navigate("SignUp")}
+                style={styles.signupLink}
+            >
+                <Text style={styles.signupText}>이메일 가입</Text>
+            </TouchableOpacity>
+        </View>
 
       </View>
-
     </SafeAreaView>
   );
 }
@@ -72,65 +87,78 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
     paddingHorizontal: 24,
-    paddingBottom: 40, // 하단 여백 확보
+    paddingBottom: 40,
   },
-  // === 로고 영역 ===
   logoArea: {
-    flex: 1, // 남은 공간을 모두 차지해서 중앙 정렬 유도
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: -50, // 시각적으로 살짝 위로 올림
+    marginTop: -30,
   },
   logoPlaceholder: {
     width: 100,
     height: 100,
-    backgroundColor: "#F3F4F6", // 연한 회색 배경
-    borderRadius: 30, // 둥근 모서리
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#F3F4F6",
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 24,
   },
   brandName: {
     fontSize: 36,
-    fontWeight: "800", // 굵게
-    color: "#1E3A8A", // 딥 블루 (Wilson 브랜드 컬러)
+    fontWeight: "800",
+    color: "#1E3A8A",
     marginBottom: 12,
   },
   slogan: {
     textAlign: "center",
     fontSize: 16,
-    color: "#6B7280", // 회색 텍스트
+    color: "#6B7280",
     lineHeight: 24,
   },
-
-  // === 버튼 영역 ===
   buttonArea: {
     width: "100%",
     alignItems: "center",
+    paddingBottom: 20,
   },
+  // 👇 모든 버튼에 공통으로 적용되는 스타일
   socialBtn: {
     width: "100%",
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: "center",
-    marginBottom: 12,
-    // 구글 버튼용 기본 스타일 (흰색 배경 + 테두리)
+    marginBottom: 12, // 👈 이 값이 모든 버튼 사이의 간격을 결정합니다 (12px)
     backgroundColor: "white",
     borderWidth: 1,
     borderColor: "#E5E7EB",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   socialText: {
     fontSize: 16,
     fontWeight: "600",
     color: "#374151",
   },
-  emailLink: {
-    marginTop: 10,
-    padding: 10,
+  signupTextContainer: {
+    flexDirection: 'row',
+    marginTop: 10, // 버튼 묶음과 텍스트 사이의 간격
+    alignItems: 'center',
   },
-  emailText: {
+  signupGuideText: {
     color: "#9CA3AF",
     fontSize: 14,
-    textDecorationLine: "underline", // 밑줄
+    marginRight: 8,
+  },
+  signupLink: {
+    padding: 5,
+  },
+  signupText: {
+    color: "#1E3A8A",
+    fontSize: 14,
+    fontWeight: "700",
+    textDecorationLine: "underline",
   },
 });

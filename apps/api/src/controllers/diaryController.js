@@ -1,70 +1,74 @@
 // src/controllers/diaryController.js
 import * as diaryService from "../services/diaryService.js";
-import { afterDiarySaved } from "../services/diaryWorkflow.js";
 
-const USER_ID = 1;
+function getUserId(req) {
+   // 1) JWT가 붙어 있으면 그걸 최우선
+  if (req.user?.id) return req.user.id;
 
+  // 2) 디버깅용 / 툴에서 때려볼 때 쿼리로 userId 넘기고 싶으면
+  if (req.query.userId) return Number(req.query.userId);
 
-/* ---------------------------------------------
-   전체 일기 조회
----------------------------------------------- */
+  // 3) 진짜 아무것도 없으면 개발용으로 1번 유저
+  return 1;
+}
+
+// function getUserId(req) {
+//   if (!req.user?.id) {
+//     throw new Error("인증되지 않은 요청입니다.");
+//   }
+//   return req.user.id;
+// }
+
+// GET /api/diary
 export const getAll = async (req, res, next) => {
   try {
-    const diaries = await diaryService.getAll(USER_ID);
-    res.json(diaries);
+    const userId = getUserId(req);
+    const list = await diaryService.getAll(userId);
+    res.json(list);
   } catch (err) {
     next(err);
   }
 };
 
-
-/* ---------------------------------------------
-   특정 날짜 일기 조회 (YYYY-MM-DD)
----------------------------------------------- */
+// GET /api/diary/:date
 export const getByDate = async (req, res, next) => {
   try {
+    const userId = getUserId(req);
     const { date } = req.params;
-    const diary = await diaryService.getByDate(USER_ID, date);
+
+    const diary = await diaryService.getByDate(userId, date);
     res.json(diary);
   } catch (err) {
     next(err);
   }
 };
 
-
-/* ---------------------------------------------
-   일기 저장 (작성 + 수정)
-   저장 후 Workflow 자동 실행
----------------------------------------------- */
-export const save = async (req, res, next) => {
+// POST /api/diary
+export const create = async (req, res, next) => {
   try {
-    const savedDiary = await diaryService.save({
+    const userId = getUserId(req);
+
+    const payload = {
       ...req.body,
-      user_id: USER_ID,
-    });
+      user_id: userId,
+    };
 
-    // 비동기 워크플로우 (오브제, BGM, 감정, 알림 생성)
-    afterDiarySaved(savedDiary).catch((err) =>
-      console.error("[Workflow error]", err)
-    );
-
-    res.json(savedDiary);
+    const newDiary = await diaryService.create(payload);
+    res.json(newDiary);
   } catch (err) {
     next(err);
   }
 };
 
-
-/* ---------------------------------------------
-   일기 삭제 (→ 세트 삭제)
----------------------------------------------- */
+// DELETE /api/diary/:date
 export const remove = async (req, res, next) => {
   try {
+    const userId = getUserId(req);
     const { date } = req.params;
 
-    const removed = await diaryService.remove(USER_ID, date);
-    res.json(removed);
+    await diaryService.remove(userId, date);
 
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

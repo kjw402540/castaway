@@ -1,9 +1,11 @@
+// src/context/EmotionContext.js
+
 import React, { createContext, useContext, useState } from 'react';
 
 const EmotionContext = createContext();
 
 export function EmotionProvider({ children }) {
-  const [emotion, setEmotion] = useState('neutral');
+  const [emotion, setEmotion] = useState('Neutral');
 
   return (
     <EmotionContext.Provider value={{ emotion, setEmotion }}>

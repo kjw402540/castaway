@@ -1,26 +1,23 @@
-// src/routes/authRoutes.js
 import express from "express";
-import * as authController from "../controllers/authController.js";
+import {
+  signup,
+  login,
+  logout,
+  kakaoLogin,
+} from "../controllers/authController.js";
 
 const router = express.Router();
 
-/* ----------------------------------------
-   회원가입
-   POST /auth/signup
------------------------------------------ */
-router.post("/signup", authController.signup);
+// 이메일 + 비밀번호 회원가입 (JWT 발급)
+router.post("/signup", signup);
 
-/* ----------------------------------------
-   로그인
-   POST /auth/login
------------------------------------------ */
-router.post("/login", authController.login);
+// 일반 로그인 (JWT 발급)
+router.post("/login", login);
 
-/* ----------------------------------------
-   로그아웃 (프론트에서 토큰 삭제용)
-   POST /auth/logout
------------------------------------------ */
-router.post("/logout", authController.logout);
+// 로그아웃
+router.post("/logout", logout);
+
+// 카카오 OAuth 로그인 (JWT 발급)
+router.post("/kakao", kakaoLogin);
 
 export default router;
-

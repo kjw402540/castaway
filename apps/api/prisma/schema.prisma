@@ -12,55 +12,57 @@ model User {
   nickname       String         @db.VarChar(50)
   email          String         @unique @db.VarChar(100)
   password_hash  String
-  cluster_id     Int
+  cluster_id     Int?
   created_date   DateTime       @default(now()) @db.Timestamp(6)
   diary_reminder DateTime?      @db.Time(6)
   bgm_volume     Float          @default(0.5)
   sfx_volume     Float          @default(0.5)
-  used_flag      Int            @default(0)
+  user_type      Int?
+  used_flag      Int            @default(1)
+  kakao_id       String?        @db.VarChar(50)
   bgms           BGM[]
   diaries        Diary[]
   notifications  Notification[]
   objects        Object[]
   reports        Report[]
-  cluster        ClusterGroup   @relation(fields: [cluster_id], references: [cluster_id])
+  cluster        ClusterGroup?  @relation(fields: [cluster_id], references: [cluster_id], onDelete: Restrict)
 }
 
 model Diary {
-  diary_id      Int           @id @default(autoincrement())
+  diary_id      Int            @id @default(autoincrement())
   user_id       Int
   original_text String
-  emotion_id    Int           @unique
-  object_id     Int?          @unique
-  created_date  DateTime      @default(now()) @db.Timestamp(6)
-  input_type    String        @db.VarChar(10)
-  flag          String        @db.VarChar(10)
+  emotion_id    Int?           @unique
+  object_id     Int?           @unique
+  created_date  DateTime       @default(now()) @db.Timestamp(6)
+  input_type    Int
+  flag          Int
   bgms          BGM[]
-  emotionResult EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
-  user          User          @relation(fields: [user_id], references: [user_id])
+  emotionResult EmotionResult? @relation(fields: [emotion_id], references: [emotion_id], onDelete: Restrict)
+  user          User           @relation(fields: [user_id], references: [user_id])
   Object        Object?
 }
 
 model ClusterGroup {
-  cluster_id              Int      @id @default(autoincrement())
-  centroid_vector         Float[]
+  cluster_id              Int                    @id @default(autoincrement())
+  centroid_vector         Unsupported("vector")?
   representative_emotions Int
   representative_keywords String[]
-  user_count              Int      @default(0)
-  updated_at              DateTime @default(now()) @db.Timestamp(6)
+  user_count              Int                    @default(0)
+  updated_at              DateTime               @default(now()) @db.Timestamp(6)
   description             String
   users                   User[]
 }
 
 model EmotionResult {
-  emotion_id   Int      @id @default(autoincrement())
-  diary_id     Int      @unique
-  summary_text String
-  main_emotion String   @db.VarChar(20)
-  keyword_1    String?  @db.VarChar(30)
-  keyword_2    String?  @db.VarChar(30)
-  keyword_3    String?  @db.VarChar(30)
-  embedding    Float[]
+  emotion_id   Int                    @id @default(autoincrement())
+  diary_id     Int                    @unique
+  summary_text String?
+  main_emotion Int?
+  keyword_1    String?                @db.VarChar(30)
+  keyword_2    String?                @db.VarChar(30)
+  keyword_3    String?                @db.VarChar(30)
+  embedding    Unsupported("vector")?
   BGM          BGM[]
   diary        Diary?
   Object       Object[]
@@ -68,16 +70,16 @@ model EmotionResult {
 }
 
 model Object {
-  object_id     Int           @id @default(autoincrement())
-  emotion_id    Int
+  object_id     Int            @id @default(autoincrement())
+  emotion_id    Int?
   user_id       Int
-  diary_id      Int           @unique
-  object_name   String        @db.VarChar(50)
+  diary_id      Int?           @unique
+  object_name   String         @db.VarChar(50)
   object_image  String
-  created_date  DateTime      @default(now()) @db.Timestamp(6)
-  Diary         Diary         @relation(fields: [diary_id], references: [diary_id], onDelete: Cascade)
-  EmotionResult EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
-  user          User          @relation(fields: [user_id], references: [user_id])
+  created_date  DateTime       @default(now()) @db.Timestamp(6)
+  Diary         Diary?         @relation(fields: [diary_id], references: [diary_id], onDelete: Cascade)
+  EmotionResult EmotionResult? @relation(fields: [emotion_id], references: [emotion_id], onDelete: Restrict)
+  user          User           @relation(fields: [user_id], references: [user_id])
 }
 
 model BGM {
@@ -85,7 +87,7 @@ model BGM {
   user_id       Int
   emotion_id    Int
   diary_id      Int
-  bgm_url       String
+  bgm_url       String?
   created_date  DateTime      @default(now()) @db.Timestamp(6)
   diary         Diary         @relation(fields: [diary_id], references: [diary_id])
   EmotionResult EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
@@ -98,9 +100,9 @@ model Report {
   emotion_id           Int
   start_date           DateTime      @db.Date
   end_date             DateTime      @db.Date
-  summary_text         String
-  encouragement_text   String
-  emotion_distribution Json
+  summary_text         String?
+  encouragement_text   String?
+  emotion_distribution Json?
   created_date         DateTime      @default(now()) @db.Timestamp(6)
   EmotionResult        EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
   user                 User          @relation(fields: [user_id], references: [user_id])
@@ -111,6 +113,6 @@ model Notification {
   user_id     Int
   message     String
   notify_time DateTime @default(now()) @db.Timestamp(6)
-  type        String   @db.VarChar(20)
+  type        Int
   user        User     @relation(fields: [user_id], references: [user_id])
 }

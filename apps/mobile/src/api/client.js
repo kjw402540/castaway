@@ -22,26 +22,33 @@ async function request(method, path, body = null, extraHeaders = {}) {
   };
 
   try {
-    const res = await fetch(`${BASE_URL}${path}`, options);
-
+    // path가 "/auth/login"이면 -> "http://.../api/auth/login"이 됨
+    const fullUrl = `${BASE_URL}/api${path}`;
+    
+    const res = await fetch(fullUrl, options);
+    
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `API Error: ${res.status}`);
+       // 1. 서버가 준 에러 응답(JSON)을 꺼내봅니다.
+      const errorData = await res.json().catch(() => ({})); 
+      
+      // 2. 에러 객체를 만듭니다.
+      const error = new Error(errorData.message || "요청 처리 실패");
+      error.status = res.status;
+      error.code = errorData.code; // P2025 같은 코드도 담아둠
+      
+      throw error;
     }
-
-    // DELETE 같은 경우 body 없을 수 있음
     if (res.status === 204) return true;
-
     return res.json();
+    
   } catch (err) {
     console.error(`[HTTP ${method}] ${path}`, err);
     throw err;
   }
 }
-
 export const httpClient = {
   get: (path) => request("GET", path),
   post: (path, body) => request("POST", path, body),
   patch: (path, body) => request("PATCH", path, body),
-  delete: (path) => request("DELETE", path),
+  delete: (path, body) => request("DELETE", path, body),
 };

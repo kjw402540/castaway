@@ -4,32 +4,19 @@ import * as objectController from "../controllers/objectController.js";
 
 const router = express.Router();
 
-/* ----------------------------------------
-   단일 오브제 조회: GET /object/item/:id
-   (구체적인 라우트이므로 제일 위!)
------------------------------------------ */
+/* 단일 조회 */
 router.get("/item/:id", objectController.getById);
 
-/* ----------------------------------------
-   특정 날짜 오브제 조회: GET /object/:date
------------------------------------------ */
-router.get("/:date", objectController.getByDate);
-
-/* ----------------------------------------
-   전체 오브제 목록: GET /object
------------------------------------------ */
+/* 전체 오브제 */
 router.get("/", objectController.getAll);
 
-/* ----------------------------------------
-   오브제 삭제: DELETE /object/item/:id
-   (→ 세트 삭제: Diary + Object + BGM)
------------------------------------------ */
+/* 배치 (미구현) */
+router.post("/place/:id", objectController.place);
+
+/* 삭제 (세트 삭제) */
 router.delete("/item/:id", objectController.remove);
 
-/* ----------------------------------------
-   오브제 배치: POST /object/place/:id
-   (나중에 위치 좌표 저장 용도)
------------------------------------------ */
-router.post("/place/:id", objectController.place);
+/* 날짜별 조회 ← 가장 아래 + prefix */
+router.get("/date/:date", objectController.getByDate);
 
 export default router;
