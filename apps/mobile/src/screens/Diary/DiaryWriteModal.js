@@ -8,14 +8,11 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Keyboard, // 키보드 내리기용
+  Keyboard,
+  ActivityIndicator, // 👈 [추가] 로딩 뱅글뱅글 아이콘
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-
 import { saveDiary } from "../../services/diaryService";
-// import { addMail } from "../../services/mailService"; // 메일도 서버에서 보내는 게 좋아서 일단 주석 처리 (원하면 푸세요)
-// import { generateMailFromDiary } from "../../services/generateMailFromDiary"; 
-
 import { formatKoreanDate } from "../../utils/formatKoreanDate";
 
 export default function DiaryWriteModal({
@@ -26,43 +23,44 @@ export default function DiaryWriteModal({
   initialText = "",
 }) {
   const [diaryText, setDiaryText] = useState("");
+  
+  // 👇 [추가] 저장 중인지 체크하는 상태
+  const [isSaving, setIsSaving] = useState(false); 
 
   useEffect(() => {
-    if (visible) setDiaryText(initialText || "");
-    else setDiaryText("");
+    if (visible) {
+      setDiaryText(initialText || "");
+      setIsSaving(false); // 모달 열릴 때 로딩 상태 초기화
+    } else {
+      setDiaryText("");
+    }
   }, [visible, initialText]);
-
-  // ❌ [삭제] useDebouncedEmotion (범인 체포 완료)
 
   const handleSave = async () => {
     if (!diaryText.trim()) return;
+    
+    // 이미 저장 중이면 함수 종료 (중복 클릭 방지)
+    if (isSaving) return;
 
-    Keyboard.dismiss(); // 저장 누르면 키보드 내리기
+    Keyboard.dismiss();
+    
+    // 👇 저장 시작! 로딩 상태 켜기
+    setIsSaving(true);
 
-    // null byte 제거
     const cleanText = diaryText.replace(/\0/g, "");
 
-    // ❌ [삭제] 프론트에서 AI 분석 대기하는 코드 삭제
-    // const emotion = await analyzeEmotion(cleanText); 
-
     try {
-      // ✅ [수정] 오직 저장 요청만 보냄! (분석은 서버가 비동기로 함)
       await saveDiary({
         text: cleanText,
         date: dateString,
-        // emotion 값은 보내지 않습니다. (서버에서 null로 저장 후 분석 시작)
       });
 
-      // 편지 보내기 기능도 원래는 서버에서 처리하는 게 맞습니다.
-      // 일단 에러 방지를 위해 이 부분은 잠시 주석 처리하거나, 
-      // 꼭 필요하다면 emotion 자리에 null을 넣어서 호출해야 합니다.
-      // await addMail(generateMailFromDiary(cleanText, "Neutral", dateString));
-
-      onSaved?.(cleanText);
-      onClose();
+      onSaved?.(); // 저장 완료 알림
+      onClose();   // 모달 닫기
     } catch (err) {
       console.error("일기 저장 실패:", err);
-      // 여기에 에러 토스트 등을 띄울 수 있음
+      // 에러 나면 다시 누를 수 있게 풀어줌
+      setIsSaving(false); 
     }
   };
 
@@ -80,8 +78,9 @@ export default function DiaryWriteModal({
               <Text style={styles.dateText}>{formatted}</Text>
               <Text style={styles.title}>오늘의 일기</Text>
             </View>
-            <TouchableOpacity onPress={onClose}>
-              <AntDesign name="close" size={24} color="#6B7280" />
+            {/* 저장 중엔 닫기 버튼도 막는 게 안전함 */}
+            <TouchableOpacity onPress={onClose} disabled={isSaving}>
+              <AntDesign name="close" size={24} color={isSaving ? "#D1D5DB" : "#6B7280"} />
             </TouchableOpacity>
           </View>
 
@@ -92,11 +91,22 @@ export default function DiaryWriteModal({
             multiline
             value={diaryText}
             onChangeText={setDiaryText}
-            // autoFocus={true} // 필요하면 추가
+            editable={!isSaving} // 저장 중엔 수정 불가
           />
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.buttonText}>기억 저장하기</Text>
+          {/* 👇 버튼 UI 변경 */}
+          <TouchableOpacity 
+            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]} 
+            onPress={handleSave}
+            disabled={isSaving} // 물리적 클릭 차단
+          >
+            {isSaving ? (
+              // 저장 중일 땐 뱅글뱅글 아이콘
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              // 평소엔 텍스트
+              <Text style={styles.buttonText}>기억 저장하기</Text>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -105,6 +115,7 @@ export default function DiaryWriteModal({
 }
 
 const styles = StyleSheet.create({
+  // ... (기존 스타일 유지) ...
   centeredView: {
     flex: 1,
     justifyContent: "center",
@@ -130,7 +141,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: "#374151",
-    textAlignVertical: 'top', // 안드로이드에서 텍스트 위로 정렬
+    textAlignVertical: 'top',
   },
   saveButton: {
     backgroundColor: "#1E3A8A",
@@ -138,6 +149,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
+  },
+  // 👇 [추가] 비활성화 스타일 (약간 흐리게)
+  saveButtonDisabled: {
+    backgroundColor: "#1E3A8A",
+    opacity: 0.7, 
   },
   buttonText: { color: "white", fontSize: 18, fontWeight: "700" },
 });
