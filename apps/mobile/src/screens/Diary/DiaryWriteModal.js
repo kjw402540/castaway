@@ -1,4 +1,3 @@
-// src/screens/Diary/DiaryWriteModal.js
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -9,16 +8,14 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Keyboard, // 키보드 내리기용
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 
 import { saveDiary } from "../../services/diaryService";
-import { addMail } from "../../services/mailService";
-import { useEmotion } from "../../context/EmotionContext";
-import { analyzeEmotion } from "../../services/emotionService";
+// import { addMail } from "../../services/mailService"; // 메일도 서버에서 보내는 게 좋아서 일단 주석 처리 (원하면 푸세요)
+// import { generateMailFromDiary } from "../../services/generateMailFromDiary"; 
 
-import { generateMailFromDiary } from "../../services/generateMailFromDiary";
-import { useDebouncedEmotion } from "./hooks/useDebouncedEmotion";
 import { formatKoreanDate } from "../../utils/formatKoreanDate";
 
 export default function DiaryWriteModal({
@@ -29,42 +26,45 @@ export default function DiaryWriteModal({
   initialText = "",
 }) {
   const [diaryText, setDiaryText] = useState("");
-  const { setEmotion } = useEmotion();
 
   useEffect(() => {
     if (visible) setDiaryText(initialText || "");
     else setDiaryText("");
   }, [visible, initialText]);
 
-  useDebouncedEmotion({
-    text: diaryText,
-    visible,
-    setEmotion,
-    delay: 500,
-  });
+  // ❌ [삭제] useDebouncedEmotion (범인 체포 완료)
 
-const handleSave = async () => {
-  if (!diaryText.trim()) return;
+  const handleSave = async () => {
+    if (!diaryText.trim()) return;
 
-  // null byte 제거
-  const cleanText = diaryText.replace(/\0/g, "");
+    Keyboard.dismiss(); // 저장 누르면 키보드 내리기
 
-  const emotion = await analyzeEmotion(cleanText);
+    // null byte 제거
+    const cleanText = diaryText.replace(/\0/g, "");
 
-  await saveDiary({
-    text: cleanText,       // Service가 이걸 받아서 original_text로 변환함
-    date: dateString,
-    emotion: emotion,      // (선택사항) 분석된 감정도 DB에 저장하고 싶으면 같이 전달
-  });
+    // ❌ [삭제] 프론트에서 AI 분석 대기하는 코드 삭제
+    // const emotion = await analyzeEmotion(cleanText); 
 
-  await addMail(generateMailFromDiary(cleanText, emotion, dateString));
+    try {
+      // ✅ [수정] 오직 저장 요청만 보냄! (분석은 서버가 비동기로 함)
+      await saveDiary({
+        text: cleanText,
+        date: dateString,
+        // emotion 값은 보내지 않습니다. (서버에서 null로 저장 후 분석 시작)
+      });
 
-  onSaved?.(cleanText);
-  onClose();
-};
+      // 편지 보내기 기능도 원래는 서버에서 처리하는 게 맞습니다.
+      // 일단 에러 방지를 위해 이 부분은 잠시 주석 처리하거나, 
+      // 꼭 필요하다면 emotion 자리에 null을 넣어서 호출해야 합니다.
+      // await addMail(generateMailFromDiary(cleanText, "Neutral", dateString));
 
-
-
+      onSaved?.(cleanText);
+      onClose();
+    } catch (err) {
+      console.error("일기 저장 실패:", err);
+      // 여기에 에러 토스트 등을 띄울 수 있음
+    }
+  };
 
   const formatted = formatKoreanDate(dateString);
 
@@ -92,6 +92,7 @@ const handleSave = async () => {
             multiline
             value={diaryText}
             onChangeText={setDiaryText}
+            // autoFocus={true} // 필요하면 추가
           />
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
@@ -129,6 +130,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: "#374151",
+    textAlignVertical: 'top', // 안드로이드에서 텍스트 위로 정렬
   },
   saveButton: {
     backgroundColor: "#1E3A8A",

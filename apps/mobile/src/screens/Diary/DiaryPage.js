@@ -6,6 +6,7 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useBackExit } from "../../hooks/useBackExit";
@@ -55,8 +56,24 @@ export default function DiaryPage() {
   const diaryText = diary?.text || "";
   const diaryExists = !!diaryText;
 
-  const handleDelete = async () => {
-    await deleteDiary(selectedDate);
+  const handleDelete = () => {
+    Alert.alert(
+      "일기 삭제", 
+      "정말로 이 일기를 삭제하시겠습니까?", 
+      [
+        {
+          text: "취소",
+          style: "cancel", 
+        },
+        {
+          text: "삭제",
+          style: "destructive", 
+          onPress: async () => {
+            await deleteDiary(selectedDate);
+          },
+        },
+      ]
+    );
   };
 
   const marked = {};
@@ -128,6 +145,7 @@ export default function DiaryPage() {
           setViewVisible(false);
           setWriteVisible(true);
         }}
+        initialData={diary}
       />
 
       <DiaryWriteModal

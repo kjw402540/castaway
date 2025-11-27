@@ -9,6 +9,7 @@ import {
   Modal,
   Image,
   Dimensions,
+  Alert,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -17,7 +18,7 @@ import Animated, {
 } from "react-native-reanimated";
 import { FontAwesome } from "@expo/vector-icons";
 
-import { getDiaryByDate, deleteDiary } from "../../services/diaryService";
+import { deleteDiary } from "../../services/diaryService";
 import WaveformPlayer from "./components/WaveformPlayer";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
@@ -26,7 +27,8 @@ export default function DiaryViewModal({
   visible,
   dateString,
   onClose,
-  onEdit, // DiaryPage에서 넘겨줌
+  onEdit,
+  initialData, // ✅ 부모(DiaryPage)가 넘겨준 데이터를 받습니다.
 }) {
   const [diary, setDiary] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -39,25 +41,22 @@ export default function DiaryViewModal({
     transform: [{ scale: scale.value }],
   }));
 
-  // 🔥 모달 열릴 때마다 데이터 정확히 다시 로드
+  // 🔥 모달 열릴 때 처리
   useEffect(() => {
     if (visible) {
       opacity.value = withTiming(1, { duration: 140 });
       scale.value = withTiming(1, { duration: 140 });
-      loadDiary();
+
+      console.log("👀 [Modal] 받은 데이터:", initialData);
+      setDiary(initialData || null);
+      
     } else {
       opacity.value = 0;
       scale.value = 0.96;
       setMenuVisible(false);
       setDiary(null);
     }
-  }, [visible, dateString]);
-
-  const loadDiary = async () => {
-    if (!dateString) return;
-    const data = await getDiaryByDate(dateString);
-    setDiary(data);
-  };
+  }, [visible, initialData]); 
 
   if (!visible) return null;
 
@@ -85,15 +84,28 @@ export default function DiaryViewModal({
             </View>
           </View>
 
-          {/* 메뉴 */}
+          {/* 메뉴 (수정/삭제) */}
           {menuVisible && (
             <View style={styles.menuBox}>
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
                   setMenuVisible(false);
-                  onClose(); // 현재 보기 닫고
-                  onEdit?.(); // WriteModal 열기
+                  Alert.alert(
+                    "일기 삭제",
+                    "정말로 삭제하시겠습니까?",
+                    [
+                      { text: "취소", style: "cancel" },
+                      {
+                        text: "삭제",
+                        style: "destructive",
+                        onPress: async () => {
+                          await deleteDiary(dateString);
+                          onClose();
+                        },
+                      },
+                    ]
+                  );
                 }}
               >
                 <Text style={styles.menuText}>수정</Text>
@@ -112,7 +124,7 @@ export default function DiaryViewModal({
             </View>
           )}
 
-          {/* 중앙 패널 */}
+          {/* 중앙 패널 (아이콘, 키워드, 오디오) */}
           <View style={styles.centerPanel}>
             {diary?.object?.icon && (
               <Image
@@ -135,14 +147,20 @@ export default function DiaryViewModal({
             {diary?.audio && <WaveformPlayer audioUri={diary.audio} />}
           </View>
 
-          {/* 감정 + 본문 */}
+          {/* 감정 표시 (안전하게 처리) */}
           {diary?.emotion && (
             <Text style={styles.emotion}>
-              감정: <Text style={styles.emotionValue}>{diary.emotion}</Text>
+              감정: <Text style={styles.emotionValue}>
+                 {/* 객체면 label, 문자열이면 그대로 출력 */}
+                 {typeof diary.emotion === 'object' ? diary.emotion.label : diary.emotion}
+              </Text>
             </Text>
           )}
 
-          <Text style={styles.body}>{diary?.text}</Text>
+          {/* ✅ [핵심 수정] 본문 내용 표시 (text가 없으면 original_text 사용) */}
+          <Text style={styles.body}>
+            {diary?.text || diary?.original_text || "내용이 없습니다."}
+          </Text>
 
         </Animated.View>
       </View>

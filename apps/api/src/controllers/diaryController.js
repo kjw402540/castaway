@@ -1,5 +1,6 @@
 // src/controllers/diaryController.js
 import * as diaryService from "../services/diaryService.js";
+import * as aiService from "../services/aiService.js"; // AI 요청 담당
 
 function getUserId(req) {
    // 1) JWT가 붙어 있으면 그걸 최우선
@@ -35,7 +36,6 @@ export const getByDate = async (req, res, next) => {
   try {
     const userId = getUserId(req);
     const { date } = req.params;
-
     const diary = await diaryService.getByDate(userId, date);
     res.json(diary);
   } catch (err) {
@@ -46,15 +46,22 @@ export const getByDate = async (req, res, next) => {
 // POST /api/diary
 export const create = async (req, res, next) => {
   try {
-    const userId = getUserId(req);
-
-    const payload = {
-      ...req.body,
-      user_id: userId,
-    };
-
-    const newDiary = await diaryService.create(payload);
+    const userId = req.user.id;
+    
+    // 1. [DB 저장]
+    const newDiary = await diaryService.create(userId, req.body);
+    
+    // 2. [응답 전송]
     res.json(newDiary);
+
+    // 3. [AI 분석]
+    setTimeout(() => {
+        if (aiService.analyzeAndSaveEmotion) {
+              aiService.analyzeAndSaveEmotion(newDiary.diary_id, newDiary.original_text)
+                .catch(e => console.error("AI Background Error:", e));
+        }
+    }, 0);
+
   } catch (err) {
     next(err);
   }
