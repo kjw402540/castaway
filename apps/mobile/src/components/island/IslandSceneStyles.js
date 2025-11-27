@@ -62,7 +62,7 @@ export const islandStyles = StyleSheet.create({
     height: 90,
     resizeMode: "contain",
     position: "absolute",
-    bottom: 160,
+    bottom: 165,
     left: (ISLAND_WIDTH - 180) / 2,
     zIndex: 9,
   },
@@ -77,32 +77,32 @@ export const islandStyles = StyleSheet.create({
 
 
   chest: {
-    width: 140,
-    height: 140,
+    width: 130,
+    height: 130,
     resizeMode: "contain",
   },
 
   /* ===== TURNTABLE ===== */
   turntableWrapper: {
     position: "absolute",
-    bottom: 60,                // ★ 동일하게 보정
+    bottom: 80,                // ★ 동일하게 보정
     right: (ISLAND_WIDTH - 380) / 2,
     zIndex: 10,
   },
 
   turntable: {
-    width: 180,
-    height: 180,
+    width: 150,
+    height: 150,
     resizeMode: "contain",
   },
 
   /* ===== MOVE EFFECT ===== */
   moveEffect: {
     position: "absolute",
-    bottom: 120,
-    right: ISLAND_WIDTH * 0.08 + 40,
-    width: 60,
-    height: 20,
+    bottom: 115,
+    right: ISLAND_WIDTH * 0.08 + 21,
+    width: 75,
+    height: 50,
     opacity: 0.9,
     zIndex: 20,
   },

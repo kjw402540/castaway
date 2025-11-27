@@ -29,7 +29,7 @@ const DUMMY_OBJECT = {
 export default function HomePage() {
   useBackExit();
   const { emotion } = useEmotion();
-  
+
 
   const now = new Date();
   const yyyy = now.getFullYear();
@@ -42,7 +42,10 @@ export default function HomePage() {
   const [writeVisible, setWriteVisible] = useState(false);
   const [todayObjVisible, setTodayObjVisible] = useState(false);
   const [treeVisible, setTreeVisible] = useState(false);
-  const [rockVisible, setRockVisible] = useState(false);
+  // const [rockVisible, setRockVisible] = useState(false);
+
+  const [isChestOpen, setChestOpen] = useState(false);
+  const [isTurntableOpen, setTurntableOpen] = useState(false);
 
   const [isInputOpen, setIsInputOpen] = useState(true);
   const [bannerClosed, setBannerClosed] = useState(false);
@@ -51,10 +54,13 @@ export default function HomePage() {
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={RNStyleSheet.absoluteFill}>
         <IslandScene
-          onPressChest={() => setTodayObjVisible(true)}
           onPressTree={() => setTreeVisible(true)}
-          onPressRock={() => setRockVisible(true)}
+          onPressChest={() => setChestOpen((prev) => !prev)}
+          onPressTurntable={() => setTurntableOpen((prev) => !prev)}
+          isChestOpen={isChestOpen}
+          isTurntableOpen={isTurntableOpen}
         />
+
       </View>
 
       {!bannerClosed && (
@@ -104,10 +110,10 @@ export default function HomePage() {
         onClose={() => setTreeVisible(false)}
       />
 
-      <RockWorryModal
+      {/* <RockWorryModal
         visible={rockVisible}
         onClose={() => setRockVisible(false)}
-      />
+      /> */}
     </SafeAreaView>
   );
 }
