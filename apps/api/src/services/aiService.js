@@ -75,10 +75,11 @@ export const runFullAnalysisWorkflow = async (diaryId, text) => {
 
 
     // =========================================================
-    // STEP 2: EmotionResult 저장 -> ★emotion_id 획득★
+    // STEP 2: EmotionResult 저장 -> ★Diary 테이블 업데이트★
     // =========================================================
     const emotionInt = mapEmotionToInt(analyzeResult.emotion_label);
 
+    // 1) EmotionResult 생성
     const savedEmotion = await prisma.emotionResult.create({
       data: {
         diary_id: Number(diaryId),
@@ -90,8 +91,17 @@ export const runFullAnalysisWorkflow = async (diaryId, text) => {
       },
     });
     
-    const emotionId = savedEmotion.emotion_id; 
-    console.log(`💾 [Step 2] 감정 저장 완료 (Emotion ID: ${emotionId})`);
+    const newEmotionId = savedEmotion.emotion_id;
+    console.log(`💾 [Step 2-1] EmotionResult 생성 완료 (ID: ${newEmotionId})`);
+
+    // 2) ✅ [추가된 핵심 로직] Diary 테이블에 emotion_id 업데이트!
+    await prisma.diary.update({
+      where: { diary_id: Number(diaryId) },
+      data: {
+        emotion_id: newEmotionId, 
+      },
+    });
+    console.log(`🔗 [Step 2-2] Diary 테이블 연결 완료 (emotion_id 업데이트)`);
 
 
     /* // =========================================================

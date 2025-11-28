@@ -11,7 +11,7 @@ export const getAll = async (userId) => {
     },
     orderBy: { created_date: "desc" },
     include: {
-      // emotionResult: true, // 스키마 필드명 확인 필요 (emotion_result? emotionResult?)
+      emotionResult: true, // 스키마 필드명 확인 필요 (emotion_result? emotionResult?)
       // Object: true,     // ⚠️ Prisma 관계 필드명은 보통 소문자(object)입니다.
       // bgms: true,
     }
@@ -37,7 +37,7 @@ export const getByDate = async (userId, ymd) => {
       },
     },
     include: {
-      // emotionResult: true,
+      emotionResult: true,
       // Object: true, // ⚠️ 대문자 Object가 맞는지 schema.prisma 확인 필수!
       // bgms: true,
     }

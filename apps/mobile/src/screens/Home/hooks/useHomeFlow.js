@@ -13,14 +13,11 @@ function getTodayYMD() {
 }
 
 export default function useHomeFlow() {
-  // ================================
-  // 1. 오늘 상태 (핵심 수정 부분)
-  // ================================
-  // 초기값을 "no_diary"가 아니라 null로 설정합니다.
-  // null: 아직 확인 안 됨 (로딩 중) -> UI 렌더링 안 함
-  // "no_diary": 확인해봤는데 진짜 없음 -> 입력창 띄움
-  // "done": 이미 있음 -> 입력창 안 띄움
+  // 오늘 상태 (초기값 null = 로딩 중)
   const [todayStatus, setTodayStatus] = useState(null); 
+  
+  // ✅ [추가] 오늘 쓴 일기 데이터 (감정분석 결과 포함)
+  const [todayDiary, setTodayDiary] = useState(null);
 
   // 오버레이
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -37,7 +34,7 @@ export default function useHomeFlow() {
   const objectShown = useRef(false);
 
   // ================================
-  // 2. 초기 진입 시, 이미 오늘 일기가 있는지 체크
+  // 1. 초기 진입 시, 이미 오늘 일기가 있는지 체크
   // ================================
   useEffect(() => {
     initTodayStatus();
@@ -49,20 +46,21 @@ export default function useHomeFlow() {
       const diary = await getDiaryByDate(today);
 
       if (diary) {
+        // 오늘 일기가 이미 존재하면
         setTodayStatus("done");
+        setTodayDiary(diary); // ✅ 일기 데이터 저장
       } else {
         setTodayStatus("no_diary");
+        setTodayDiary(null);
       }
     } catch (err) {
-      console.error("일기 상태 확인 실패:", err);
-      // 에러 시 안전하게 입력창을 띄워줄지, 아니면 에러 처리를 할지 결정
-      // 일단은 작성을 유도하기 위해 no_diary로 둠
+      console.error("일기 확인 실패:", err);
       setTodayStatus("no_diary");
     }
   };
 
   // ================================
-  // 3. 섬 튜토리얼
+  // 2. 섬 튜토리얼
   // ================================
   const startIslandTutorial = () => {
     if (islandShown.current) return;
@@ -79,15 +77,14 @@ export default function useHomeFlow() {
   };
 
   // ================================
-  // 4. 일기 저장 후 감정 분석 시작
+  // 3. 일기 저장 후 감정 분석 시작
   // ================================
   const startAnalysis = async () => {
     setTodayStatus("analyzing");
     setShowAnalysis(true);
 
-    // 실제 감정 분석 API 붙이는 자리
-    // (지금은 시뮬레이션 0.9초 대기)
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    // 실제로는 서버에서 분석이 돌고 있으니 잠시 대기 연출
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     setShowAnalysis(false);
     setTodayStatus("object_created");
@@ -95,16 +92,18 @@ export default function useHomeFlow() {
 
     setToastMessage("새 오브제가 생성되었습니다.");
     setToastVisible(true);
+    
+    // ✅ [핵심] 분석이 끝났으니 DB에서 최신 데이터(감정결과 포함)를 다시 긁어옵니다.
+    await initTodayStatus();
   };
 
   // ================================
-  // 5. 보상(오브제) 모달 닫기
+  // 4. 보상(오브제) 모달 닫기
   // ================================
   const finishReward = () => {
     setShowReward(false);
     startObjectTutorial();
-
-    // 오늘은 일기 있음 상태로 고정
+    // 상태 확정
     setTodayStatus("done");
   };
 
@@ -113,7 +112,9 @@ export default function useHomeFlow() {
   };
 
   return {
-    todayStatus, // null | "no_diary" | "done" ...
+    todayStatus,
+    todayDiary, // ✅ 내보내기
+
     showAnalysis,
     showReward,
     toastVisible,
