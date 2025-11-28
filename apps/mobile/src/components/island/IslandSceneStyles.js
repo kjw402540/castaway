@@ -29,14 +29,6 @@ export const islandStyles = StyleSheet.create({
     bottom: 0,
   },
 
-  wave: {
-    position: "absolute",
-    bottom: height * 0.22,
-    width: 330,
-    height: 150,
-    opacity: 0.9,
-    zIndex: 4,
-  },
 
   islandWrapper: {
     position: "absolute",

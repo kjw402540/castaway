@@ -1,31 +1,56 @@
-import { useEffect, useRef } from "react";
-import { Animated, Dimensions, Easing } from "react-native";
+// src/components/island/hooks/useCloudAnimation.js
+import { useEffect } from "react";
+import {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+  runOnJS,
+} from "react-native-reanimated";
+import { Dimensions } from "react-native";
 
-const screenWidth = Dimensions.get("window").width;
+const { width } = Dimensions.get("window");
 
-export default function useCloudAnimation() {
-  const translateX = useRef(new Animated.Value(0)).current;
+export default function useCloudAnimation(speed, initialDelay = 0) {
+  const x = useSharedValue(-width * 1.5);
 
-  // 랜덤 Y (구름 높이)
-  const randomY = Math.floor(Math.random() * 200) + 20;
+  const randomY = Math.floor(Math.random() * 150) + 10;
 
-  // 출발 방향 랜덤
-  const direction = Math.random() < 0.5 ? "left" : "right";
-  const startX = direction === "left" ? -200 : screenWidth + 200;
-  const endX = direction === "left" ? screenWidth + 200 : -200;
+  const animateOnce = () => {
+    const fromLeft = Math.random() < 0.5;
+    const startX = fromLeft ? -width * 1.5 : width * 1.5;
+    const endX = fromLeft ? width * 1.5 : -width * 1.5;
+
+    const travel = speed + Math.random() * 12000;
+    const rest = Math.random() * 8000 + 4000;
+
+    x.value = startX;
+
+    x.value = withTiming(
+      endX,
+      {
+        duration: travel,
+        easing: Easing.linear,
+      },
+      () => {
+        runOnJS(() => {
+          setTimeout(() => animateOnce(), rest);
+        })();
+      }
+    );
+  };
 
   useEffect(() => {
-    translateX.setValue(startX);
+    const t = setTimeout(() => {
+      animateOnce();
+    }, initialDelay);
 
-    Animated.loop(
-      Animated.timing(translateX, {
-        toValue: endX,
-        duration: 35000 + Math.random() * 10000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, []);
+    return () => clearTimeout(t);
+  }, [speed, initialDelay]);
 
-  return { translateX, randomY };
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.value }],
+  }));
+
+  return { animatedStyle, randomY };
 }
