@@ -28,7 +28,8 @@ export default function DiaryViewModal({
   dateString,
   onClose,
   onEdit,
-  initialData, // ✅ 부모(DiaryPage)가 넘겨준 데이터를 받습니다.
+  initialData,
+  onDeleteSuccess
 }) {
   const [diary, setDiary] = useState(null);
   const [menuVisible, setMenuVisible] = useState(false);
@@ -87,6 +88,20 @@ export default function DiaryViewModal({
           {/* 메뉴 (수정/삭제) */}
           {menuVisible && (
             <View style={styles.menuBox}>
+              
+              {/* ✅ [수정] 1. 수정 버튼: Alert 없이 바로 수정 화면으로 이동 */}
+              <TouchableOpacity
+                style={styles.menuItem}
+                onPress={() => {
+                  setMenuVisible(false);
+                  onClose(); // 현재 보기 모달 닫고
+                  onEdit?.(); // 부모가 준 수정 함수(작성 모달 열기) 실행
+                }}
+              >
+                <Text style={styles.menuText}>수정</Text>
+              </TouchableOpacity>
+
+              {/* ✅ [수정] 2. 삭제 버튼: 여기서 Alert를 띄워야 함! */}
               <TouchableOpacity
                 style={styles.menuItem}
                 onPress={() => {
@@ -102,21 +117,11 @@ export default function DiaryViewModal({
                         onPress: async () => {
                           await deleteDiary(dateString);
                           onClose();
+                          onDeleteSuccess?.();
                         },
                       },
                     ]
                   );
-                }}
-              >
-                <Text style={styles.menuText}>수정</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.menuItem}
-                onPress={async () => {
-                  setMenuVisible(false);
-                  await deleteDiary(dateString);
-                  onClose();
                 }}
               >
                 <Text style={styles.menuDelete}>삭제</Text>
@@ -147,17 +152,16 @@ export default function DiaryViewModal({
             {diary?.audio && <WaveformPlayer audioUri={diary.audio} />}
           </View>
 
-          {/* 감정 표시 (안전하게 처리) */}
+          {/* 감정 표시 */}
           {diary?.emotion && (
             <Text style={styles.emotion}>
               감정: <Text style={styles.emotionValue}>
-                 {/* 객체면 label, 문자열이면 그대로 출력 */}
                  {typeof diary.emotion === 'object' ? diary.emotion.label : diary.emotion}
               </Text>
             </Text>
           )}
 
-          {/* ✅ [핵심 수정] 본문 내용 표시 (text가 없으면 original_text 사용) */}
+          {/* 본문 내용 표시 */}
           <Text style={styles.body}>
             {diary?.text || diary?.original_text || "내용이 없습니다."}
           </Text>
