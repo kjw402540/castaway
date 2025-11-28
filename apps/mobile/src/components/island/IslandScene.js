@@ -1,8 +1,7 @@
 // IslandScene.js
-import React, { useEffect } from "react";
+import React from "react";
 import { View } from "react-native";
 import { useEmotion } from "../../context/EmotionContext";
-
 import { islandStyles as s } from "./IslandSceneStyles";
 
 import SkyLayer from "./SkyLayer";
@@ -10,15 +9,12 @@ import CloudLayer from "./CloudLayer";
 import SeaLayer from "./SeaLayer";
 import IslandObjectsLayer from "./IslandObjectsLayer";
 
-function IslandScene({ 
-  onPressChest, 
-  onPressTurntable, 
-  onPressTree, 
-  onPressRock 
+function IslandScene({
+  onPressChestDetail,
+  onPressTurntableDetail,
+  onPressTree,
 }) {
   const { emotion } = useEmotion();
-
-
   const normalizedEmotion = emotion || "Neutral";
 
   return (
@@ -28,10 +24,9 @@ function IslandScene({
       <SeaLayer emotion={normalizedEmotion} />
 
       <IslandObjectsLayer
-        onPressChest={onPressChest}
-        onPressTurntable={onPressTurntable}
+        onPressChestDetail={onPressChestDetail}
+        onPressTurntableDetail={onPressTurntableDetail}
         onPressTree={onPressTree}
-        onPressRock={onPressRock}
       />
     </View>
   );

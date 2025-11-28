@@ -1,4 +1,3 @@
-// src/screens/Diary/DiaryWriteModal.js
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -9,16 +8,11 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  Keyboard,
+  ActivityIndicator, // 👈 [추가] 로딩 뱅글뱅글 아이콘
 } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
-
 import { saveDiary } from "../../services/diaryService";
-import { addMail } from "../../services/mailService";
-import { useEmotion } from "../../context/EmotionContext";
-import { analyzeEmotion } from "../../services/emotionService";
-
-import { generateMailFromDiary } from "../../services/generateMailFromDiary";
-import { useDebouncedEmotion } from "./hooks/useDebouncedEmotion";
 import { formatKoreanDate } from "../../utils/formatKoreanDate";
 
 export default function DiaryWriteModal({
@@ -29,42 +23,46 @@ export default function DiaryWriteModal({
   initialText = "",
 }) {
   const [diaryText, setDiaryText] = useState("");
-  const { setEmotion } = useEmotion();
+  
+  // 👇 [추가] 저장 중인지 체크하는 상태
+  const [isSaving, setIsSaving] = useState(false); 
 
   useEffect(() => {
-    if (visible) setDiaryText(initialText || "");
-    else setDiaryText("");
+    if (visible) {
+      setDiaryText(initialText || "");
+      setIsSaving(false); // 모달 열릴 때 로딩 상태 초기화
+    } else {
+      setDiaryText("");
+    }
   }, [visible, initialText]);
 
-  useDebouncedEmotion({
-    text: diaryText,
-    visible,
-    setEmotion,
-    delay: 500,
-  });
+  const handleSave = async () => {
+    if (!diaryText.trim()) return;
+    
+    // 이미 저장 중이면 함수 종료 (중복 클릭 방지)
+    if (isSaving) return;
 
-const handleSave = async () => {
-  if (!diaryText.trim()) return;
+    Keyboard.dismiss();
+    
+    // 👇 저장 시작! 로딩 상태 켜기
+    setIsSaving(true);
 
-  // null byte 제거
-  const cleanText = diaryText.replace(/\0/g, "");
+    const cleanText = diaryText.replace(/\0/g, "");
 
-  const emotion = await analyzeEmotion(cleanText);
+    try {
+      await saveDiary({
+        text: cleanText,
+        date: dateString,
+      });
 
-  await saveDiary({
-    text: cleanText,       // Service가 이걸 받아서 original_text로 변환함
-    date: dateString,
-    emotion: emotion,      // (선택사항) 분석된 감정도 DB에 저장하고 싶으면 같이 전달
-  });
-
-  await addMail(generateMailFromDiary(cleanText, emotion, dateString));
-
-  onSaved?.(cleanText);
-  onClose();
-};
-
-
-
+      onSaved?.(); // 저장 완료 알림
+      onClose();   // 모달 닫기
+    } catch (err) {
+      console.error("일기 저장 실패:", err);
+      // 에러 나면 다시 누를 수 있게 풀어줌
+      setIsSaving(false); 
+    }
+  };
 
   const formatted = formatKoreanDate(dateString);
 
@@ -80,8 +78,9 @@ const handleSave = async () => {
               <Text style={styles.dateText}>{formatted}</Text>
               <Text style={styles.title}>오늘의 일기</Text>
             </View>
-            <TouchableOpacity onPress={onClose}>
-              <AntDesign name="close" size={24} color="#6B7280" />
+            {/* 저장 중엔 닫기 버튼도 막는 게 안전함 */}
+            <TouchableOpacity onPress={onClose} disabled={isSaving}>
+              <AntDesign name="close" size={24} color={isSaving ? "#D1D5DB" : "#6B7280"} />
             </TouchableOpacity>
           </View>
 
@@ -92,10 +91,22 @@ const handleSave = async () => {
             multiline
             value={diaryText}
             onChangeText={setDiaryText}
+            editable={!isSaving} // 저장 중엔 수정 불가
           />
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.buttonText}>기억 저장하기</Text>
+          {/* 👇 버튼 UI 변경 */}
+          <TouchableOpacity 
+            style={[styles.saveButton, isSaving && styles.saveButtonDisabled]} 
+            onPress={handleSave}
+            disabled={isSaving} // 물리적 클릭 차단
+          >
+            {isSaving ? (
+              // 저장 중일 땐 뱅글뱅글 아이콘
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              // 평소엔 텍스트
+              <Text style={styles.buttonText}>기억 저장하기</Text>
+            )}
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -104,6 +115,7 @@ const handleSave = async () => {
 }
 
 const styles = StyleSheet.create({
+  // ... (기존 스타일 유지) ...
   centeredView: {
     flex: 1,
     justifyContent: "center",
@@ -129,6 +141,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: "#374151",
+    textAlignVertical: 'top',
   },
   saveButton: {
     backgroundColor: "#1E3A8A",
@@ -136,6 +149,11 @@ const styles = StyleSheet.create({
     borderRadius: 15,
     justifyContent: "center",
     alignItems: "center",
+  },
+  // 👇 [추가] 비활성화 스타일 (약간 흐리게)
+  saveButtonDisabled: {
+    backgroundColor: "#1E3A8A",
+    opacity: 0.7, 
   },
   buttonText: { color: "white", fontSize: 18, fontWeight: "700" },
 });

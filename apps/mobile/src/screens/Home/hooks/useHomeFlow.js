@@ -13,9 +13,11 @@ function getTodayYMD() {
 }
 
 export default function useHomeFlow() {
-  // 오늘 상태
-  const [todayStatus, setTodayStatus] = useState("no_diary");
-  // "no_diary" | "analyzing" | "object_created" | "done"
+  // 오늘 상태 (초기값 null = 로딩 중)
+  const [todayStatus, setTodayStatus] = useState(null); 
+  
+  // ✅ [추가] 오늘 쓴 일기 데이터 (감정분석 결과 포함)
+  const [todayDiary, setTodayDiary] = useState(null);
 
   // 오버레이
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -39,13 +41,20 @@ export default function useHomeFlow() {
   }, []);
 
   const initTodayStatus = async () => {
-    const today = getTodayYMD();
-    const diary = await getDiaryByDate(today);
+    try {
+      const today = getTodayYMD();
+      const diary = await getDiaryByDate(today);
 
-    if (diary) {
-      // 오늘 일기가 이미 존재하면
-      setTodayStatus("done");
-    } else {
+      if (diary) {
+        // 오늘 일기가 이미 존재하면
+        setTodayStatus("done");
+        setTodayDiary(diary); // ✅ 일기 데이터 저장
+      } else {
+        setTodayStatus("no_diary");
+        setTodayDiary(null);
+      }
+    } catch (err) {
+      console.error("일기 확인 실패:", err);
       setTodayStatus("no_diary");
     }
   };
@@ -74,8 +83,8 @@ export default function useHomeFlow() {
     setTodayStatus("analyzing");
     setShowAnalysis(true);
 
-    // 실제 감정 분석 API 붙이는 자리
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    // 실제로는 서버에서 분석이 돌고 있으니 잠시 대기 연출
+    await new Promise((resolve) => setTimeout(resolve, 1500));
 
     setShowAnalysis(false);
     setTodayStatus("object_created");
@@ -83,6 +92,9 @@ export default function useHomeFlow() {
 
     setToastMessage("새 오브제가 생성되었습니다.");
     setToastVisible(true);
+    
+    // ✅ [핵심] 분석이 끝났으니 DB에서 최신 데이터(감정결과 포함)를 다시 긁어옵니다.
+    await initTodayStatus();
   };
 
   // ================================
@@ -91,8 +103,7 @@ export default function useHomeFlow() {
   const finishReward = () => {
     setShowReward(false);
     startObjectTutorial();
-
-    // 오늘은 일기 있음 상태로 고정
+    // 상태 확정
     setTodayStatus("done");
   };
 
@@ -102,6 +113,8 @@ export default function useHomeFlow() {
 
   return {
     todayStatus,
+    todayDiary, // ✅ 내보내기
+
     showAnalysis,
     showReward,
     toastVisible,

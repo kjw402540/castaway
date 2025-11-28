@@ -8,10 +8,13 @@ import ProfileRow from "./components/ProfileRow";
 import ProfileSwitch from "./components/ProfileSwitch";
 import ToastModal from "../../components/ui/ToastModal";
 import { useBackExit } from "../../hooks/useBackExit";
+import { useSound } from "../../context/SoundContext";
 
 export default function ProfilePage({ navigation }) {
   const profile = useProfile();
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const { bgmEnabled, setBgmEnabled } = useSound();
+
 
   useBackExit();
 
@@ -33,10 +36,10 @@ export default function ProfilePage({ navigation }) {
       "정말 로그아웃 하시겠습니까?",
       [
         { text: "취소", style: "cancel" },
-        { 
-          text: "로그아웃", 
+        {
+          text: "로그아웃",
           style: "destructive",
-          onPress: () => profile.logout() 
+          onPress: () => profile.logout()
         },
       ]
     );
@@ -49,10 +52,10 @@ export default function ProfilePage({ navigation }) {
       "탈퇴 시 모든 데이터가 삭제됩니다.\n정말 탈퇴하시겠습니까?",
       [
         { text: "취소", style: "cancel" },
-        { 
-          text: "탈퇴하기", 
+        {
+          text: "탈퇴하기",
           style: "destructive",
-          onPress: () => profile.deleteAccount() 
+          onPress: () => profile.deleteAccount()
         },
       ]
     );
@@ -61,12 +64,12 @@ export default function ProfilePage({ navigation }) {
   return (
     <SafeAreaView style={styles.safeArea}>
       {/* 👇 수정됨: showsVerticalScrollIndicator={false} 추가 */}
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContainer}
-        showsVerticalScrollIndicator={false} 
+        showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        
+
         {/* 1. 헤더 */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>내 정보</Text>
@@ -81,8 +84,8 @@ export default function ProfilePage({ navigation }) {
             onButtonPress={profile.saveNickname}
             buttonText="수정"
           />
-          
-          <View style={{ height: 10 }} /> 
+
+          <View style={{ height: 10 }} />
 
           <ProfileRow
             label="이메일"
@@ -98,22 +101,22 @@ export default function ProfilePage({ navigation }) {
 
         {/* 3. 계정 연동 */}
         <View>
-            <Text style={styles.sectionLabel}>계정 연동</Text>
-            {/* Google Button */}
-            <TouchableOpacity style={styles.snsBtn}>
-                <View style={styles.iconPlaceholder} >
-                    <Text style={{fontSize:12}}>G</Text> 
-                </View> 
-                <Text style={styles.snsText}>Google 계정 연동하기</Text>
-            </TouchableOpacity>
+          <Text style={styles.sectionLabel}>계정 연동</Text>
+          {/* Google Button */}
+          <TouchableOpacity style={styles.snsBtn}>
+            <View style={styles.iconPlaceholder} >
+              <Text style={{ fontSize: 12 }}>G</Text>
+            </View>
+            <Text style={styles.snsText}>Google 계정 연동하기</Text>
+          </TouchableOpacity>
 
-            {/* Kakao Button */}
-            <TouchableOpacity style={styles.snsBtn}>
-                <View style={[styles.iconPlaceholder, {backgroundColor: '#FEE500'}]} >
-                      <Text style={{fontSize:12}}>K</Text> 
-                </View>
-                <Text style={styles.snsText}>Kakao 계정 연동하기</Text>
-            </TouchableOpacity>
+          {/* Kakao Button */}
+          <TouchableOpacity style={styles.snsBtn}>
+            <View style={[styles.iconPlaceholder, { backgroundColor: '#FEE500' }]} >
+              <Text style={{ fontSize: 12 }}>K</Text>
+            </View>
+            <Text style={styles.snsText}>Kakao 계정 연동하기</Text>
+          </TouchableOpacity>
         </View>
 
         {/* 구분선 */}
@@ -121,59 +124,63 @@ export default function ProfilePage({ navigation }) {
 
         {/* 4. 설정 (하단) */}
         <View>
-          <ProfileSwitch 
-            label="BGM" 
-            value={profile.bgm} 
-            onValueChange={profile.setBgm} 
+          <ProfileSwitch
+            label="BGM"
+            value={bgmEnabled}
+            onValueChange={(value) => {
+              setBgmEnabled(value); // 재생/정지
+              profile.setBgm(value); // 서버 값도 함께 반영
+            }}
           />
-          <ProfileSwitch 
-            label="EFFECT" 
-            value={profile.effect} 
-            onValueChange={profile.setEffect} 
+
+          <ProfileSwitch
+            label="EFFECT"
+            value={profile.effect}
+            onValueChange={profile.setEffect}
           />
-          
+
           <View>
-            <ProfileSwitch 
-                label="Reminder" 
-                value={profile.reminder} 
-                onValueChange={profile.setReminder} 
+            <ProfileSwitch
+              label="Reminder"
+              value={profile.reminder}
+              onValueChange={profile.setReminder}
             />
             {profile.reminder && (
-                <View style={styles.timePickerContainer}>
+              <View style={styles.timePickerContainer}>
                 <Text style={styles.timeLabel}>알림 시간</Text>
-                <TouchableOpacity 
-                    style={styles.timeButton} 
-                    onPress={() => setShowTimePicker(true)}
+                <TouchableOpacity
+                  style={styles.timeButton}
+                  onPress={() => setShowTimePicker(true)}
                 >
-                    <Text style={styles.timeText}>
+                  <Text style={styles.timeText}>
                     {formatTime(profile.reminderTime)}
-                    </Text>
+                  </Text>
                 </TouchableOpacity>
-                </View>
+              </View>
             )}
             {showTimePicker && (
-                <DateTimePicker
+              <DateTimePicker
                 value={profile.reminderTime}
                 mode="time"
                 is24Hour={false}
                 display="default"
                 onChange={onChangeTime}
-                />
+              />
             )}
           </View>
         </View>
 
         {/* 5. 계정 관리 (로그아웃 / 회원탈퇴) */}
         <View style={styles.footerContainer}>
-            <TouchableOpacity onPress={handleLogoutPress} style={styles.footerButton}>
-                <Text style={styles.logoutText}>로그아웃</Text>
-            </TouchableOpacity>
-            
-            <View style={styles.verticalDivider} />
-            
-            <TouchableOpacity onPress={handleDeletePress} style={styles.footerButton}>
-                <Text style={styles.deleteText}>회원탈퇴</Text>
-            </TouchableOpacity>
+          <TouchableOpacity onPress={handleLogoutPress} style={styles.footerButton}>
+            <Text style={styles.logoutText}>로그아웃</Text>
+          </TouchableOpacity>
+
+          <View style={styles.verticalDivider} />
+
+          <TouchableOpacity onPress={handleDeletePress} style={styles.footerButton}>
+            <Text style={styles.deleteText}>회원탈퇴</Text>
+          </TouchableOpacity>
         </View>
 
       </ScrollView>
@@ -192,10 +199,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "white",
   },
-  scrollContainer: { 
+  scrollContainer: {
     paddingHorizontal: 24,
     paddingTop: 10,
-    paddingBottom: 40, 
+    paddingBottom: 40,
   },
   header: {
     marginBottom: 20,
@@ -285,12 +292,12 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     fontSize: 13,
-    color: '#6B7280', 
+    color: '#6B7280',
     textDecorationLine: 'underline',
   },
   deleteText: {
     fontSize: 13,
-    color: '#EF4444', 
+    color: '#EF4444',
     textDecorationLine: 'underline',
   },
 });

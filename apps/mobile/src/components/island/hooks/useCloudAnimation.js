@@ -1,31 +1,44 @@
-import { useEffect, useRef } from "react";
-import { Animated, Dimensions, Easing } from "react-native";
+import { useEffect } from "react";
+import {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+} from "react-native-reanimated";
+import { Dimensions } from "react-native";
 
-const screenWidth = Dimensions.get("window").width;
+const { width } = Dimensions.get("window");
 
-export default function useCloudAnimation() {
-  const translateX = useRef(new Animated.Value(0)).current;
+export default function useCloudAnimation(speed, initialDelay = 0) {
+  const x = useSharedValue(-width * 1.5);
 
-  // 랜덤 Y (구름 높이)
-  const randomY = Math.floor(Math.random() * 200) + 20;
-
-  // 출발 방향 랜덤
-  const direction = Math.random() < 0.5 ? "left" : "right";
-  const startX = direction === "left" ? -200 : screenWidth + 200;
-  const endX = direction === "left" ? screenWidth + 200 : -200;
+  const randomY = Math.floor(Math.random() * 150) + 10;
 
   useEffect(() => {
-    translateX.setValue(startX);
+    const timeout = setTimeout(() => {
+      const fromLeft = Math.random() < 0.5;
+      const startX = fromLeft ? -width * 1.5 : width * 1.5;
+      const endX = fromLeft ? width * 1.5 : -width * 1.5;
 
-    Animated.loop(
-      Animated.timing(translateX, {
-        toValue: endX,
-        duration: 35000 + Math.random() * 10000,
-        easing: Easing.linear,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, []);
+      x.value = startX;
 
-  return { translateX, randomY };
+      x.value = withRepeat(
+        withTiming(endX, {
+          duration: speed + Math.random() * 12000,
+          easing: Easing.linear,
+        }),
+        -1, // infinite
+        true // reverse
+      );
+    }, initialDelay);
+
+    return () => clearTimeout(timeout);
+  }, [speed, initialDelay]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: x.value }],
+  }));
+
+  return { animatedStyle, randomY };
 }
