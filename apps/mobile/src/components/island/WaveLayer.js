@@ -1,6 +1,7 @@
 // WaveLayer.js
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Image, Animated, Easing } from "react-native";
+import useSceneActive from "../../hooks/useSceneActive"; // 추가
 
 const waveImages = [
   require("../../../assets/wave/wave1.png"),
@@ -26,8 +27,8 @@ const waveConfigs = [
 function WaveImage({ source, position, opacity, zIndex, config }) {
   const animValue = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    const animation = Animated.loop(
+  const play = () => {
+    Animated.loop(
       Animated.sequence([
         Animated.timing(animValue, {
           toValue: 1,
@@ -42,17 +43,24 @@ function WaveImage({ source, position, opacity, zIndex, config }) {
           useNativeDriver: true,
         }),
       ])
-    );
+    ).start();
+  };
 
-    const timer = setTimeout(() => {
-      animation.start();
-    }, config.delay);
-
+  useEffect(() => {
+    const timer = setTimeout(play, config.delay);
     return () => {
       clearTimeout(timer);
-      animation.stop();
+      animValue.stopAnimation();
     };
   }, []);
+
+  // focus 상태에 따라 pause/resume 적용
+  useSceneActive([
+    {
+      value: animValue,
+      resume: play,
+    },
+  ]);
 
   const getTransform = () => {
     switch (config.type) {

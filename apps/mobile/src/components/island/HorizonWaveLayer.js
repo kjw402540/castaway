@@ -15,44 +15,45 @@ const { width } = Dimensions.get("window");
 const WAVE_WIDTH = width * 1.5;
 const WAVE_HEIGHT = 40;
 
+// 포인트 수 감소 (50 → 24)
+// 시각 차이 거의 없지만 연산량 대폭 감소
+const NUM_POINTS = 24;
+
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 export default function HorizonWaveLayer({ color = "#66C2FF" }) {
   const progress = useSharedValue(0);
 
   useEffect(() => {
+    // 속도 조금 느리게 (4000 → 6500)
+    // easing 단순화
     progress.value = withRepeat(
       withTiming(1, {
-        duration: 4000,
+        duration: 6500,
         easing: Easing.linear,
-        // ★ SVG Path 애니메이션에 꼭 필요
-        useNativeDriver: false,
+        useNativeDriver: false, // SVG path 필수
       }),
-      -1,   // 무한 반복
-      false // 왕복 X, 한 방향
+      -1,
+      false
     );
   }, []);
 
   const animatedProps = useAnimatedProps(() => {
     const p = progress.value;
+    const phase = p * Math.PI * 2;
+
     const points = [];
-    const numPoints = 50;
 
-    // p: 0 → 1 사이에서 "정확히 한/여러 바퀴" 돌아야
-    // 0일 때 모양과 1일 때 모양이 딱 맞아서 끊김이 줄어댐
-    const phase = p * Math.PI * 2; // 0 → 2π
-
-    for (let i = 0; i <= numPoints; i++) {
-      const ratio = i / numPoints;
+    for (let i = 0; i <= NUM_POINTS; i++) {
+      const ratio = i / NUM_POINTS;
       const x = WAVE_WIDTH * ratio;
 
-      // 기본 위치에 따른 베이스 각도
       const base = ratio * Math.PI * 2;
 
-      // 모두 2π의 정수배만 쓰도록 조정
-      const wave1 = Math.sin(base + phase * 1) * 7;   // 1바퀴
-      const wave2 = Math.sin(base * 2 + phase * 2) * 3; // 2바퀴
-      const wave3 = Math.sin(base * 3 + phase * 3) * 1.5; // 3바퀴
+      // 1,2,3차 파형 모두 유지 (디테일 유지)
+      const wave1 = Math.sin(base + phase * 1) * 7;
+      const wave2 = Math.sin(base * 2 + phase * 2) * 3;
+      const wave3 = Math.sin(base * 3 + phase * 3) * 1.5;
 
       const y = WAVE_HEIGHT / 2 + wave1 + wave2 + wave3;
       points.push({ x, y });
@@ -75,11 +76,7 @@ export default function HorizonWaveLayer({ color = "#66C2FF" }) {
       style={styles.svg}
       pointerEvents="none"
     >
-      <AnimatedPath
-        animatedProps={animatedProps}
-        fill={color}
-        opacity={1}
-      />
+      <AnimatedPath animatedProps={animatedProps} fill={color} opacity={1} />
     </Svg>
   );
 }

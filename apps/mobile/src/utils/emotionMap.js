@@ -21,8 +21,8 @@ export const emotionColors = {
     sea: "#FFB347",
   },
   Neutral: {
-    skyTop: "#D9D9D9",
-    skyBottom: "#F0F0F0",
-    sea: "#9B9B9B",
+    skyTop: "#ccefffff",
+    skyBottom: "#d6d6d6ff",
+    sea: "#e0e0e0ff",
   },
 };

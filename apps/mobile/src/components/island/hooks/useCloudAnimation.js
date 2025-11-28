@@ -1,3 +1,4 @@
+// src/components/island/hooks/useCloudAnimation.js
 import { useEffect } from "react";
 import {
   useSharedValue,
@@ -19,17 +20,17 @@ export default function useCloudAnimation(speed, initialDelay = 0) {
     const timeout = setTimeout(() => {
       const fromLeft = Math.random() < 0.5;
       const startX = fromLeft ? -width * 1.5 : width * 1.5;
-      const endX = fromLeft ? width * 1.5 : -width * 1.5;
+      const endX = fromLeft ? width * 1.8 : -width * 1.8;
 
       x.value = startX;
 
       x.value = withRepeat(
         withTiming(endX, {
-          duration: speed + Math.random() * 12000,
+          duration: speed * 1.25 + Math.random() * 8000, // ← 속도만 조정
           easing: Easing.linear,
         }),
-        -1, // infinite
-        true // reverse
+        -1,
+        true // 왕복 유지
       );
     }, initialDelay);
 
