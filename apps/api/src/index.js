@@ -16,6 +16,9 @@ import reportRoutes from "./routes/reportRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import clusterRoutes from "./routes/clusterRoutes.js";
 
+// cron
+import { startEmotionPredictionJob } from "./services/cronService.js";
+
 const app = express();
 
 app.use(cors());
@@ -44,6 +47,8 @@ app.use((err, req, res, next) => {
   console.error("Server Error:", err);
   res.status(500).json({ message: err.message });
 });
+
+startEmotionPredictionJob();
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
