@@ -8,24 +8,25 @@ datasource db {
 }
 
 model User {
-  user_id        Int            @id @default(autoincrement())
-  nickname       String         @db.VarChar(50)
-  email          String         @unique @db.VarChar(100)
-  password_hash  String
-  cluster_id     Int?
-  created_date   DateTime       @default(now()) @db.Timestamp(6)
-  diary_reminder DateTime?      @db.Time(6)
-  bgm_volume     Float          @default(0.5)
-  sfx_volume     Float          @default(0.5)
-  user_type      Int?
-  used_flag      Int            @default(1)
-  kakao_id       String?        @db.VarChar(50)
-  bgms           BGM[]
-  diaries        Diary[]
-  notifications  Notification[]
-  objects        Object[]
-  reports        Report[]
-  cluster        ClusterGroup?  @relation(fields: [cluster_id], references: [cluster_id], onDelete: Restrict)
+  user_id           Int                 @id @default(autoincrement())
+  nickname          String              @db.VarChar(50)
+  email             String              @unique @db.VarChar(100)
+  password_hash     String
+  cluster_id        Int?
+  created_date      DateTime            @default(now()) @db.Timestamp(6)
+  diary_reminder    DateTime?           @db.Time(6)
+  bgm_volume        Float               @default(0.5)
+  sfx_volume        Float               @default(0.5)
+  user_type         Int?
+  used_flag         Int                 @default(1)
+  kakao_id          String?             @db.VarChar(50)
+  bgms              BGM[]
+  diaries           Diary[]
+  EmotionPrediction EmotionPrediction[]
+  notifications     Notification[]
+  objects           Object[]
+  reports           Report[]
+  cluster           ClusterGroup?       @relation(fields: [cluster_id], references: [cluster_id], onDelete: Restrict)
 }
 
 model Diary {
@@ -115,4 +116,14 @@ model Notification {
   notify_time DateTime @default(now()) @db.Timestamp(6)
   type        Int
   user        User     @relation(fields: [user_id], references: [user_id])
+}
+
+model EmotionPrediction {
+  prediction_id     Int                    @id @default(autoincrement())
+  user_id           Int
+  predicted_emotion Int?
+  emotion_softmax   Unsupported("vector")?
+  main_emotion      Int?
+  created_date      DateTime               @default(now()) @db.Timestamp(6)
+  User              User                   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_id")
 }
