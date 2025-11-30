@@ -1,9 +1,10 @@
 // src/api/client.js
 import { BASE_URL } from "../config/apiConfig";
-import { getAuthToken } from "../services/authService";
+import * as SecureStore from 'expo-secure-store';
+//import { getAuthToken } from "../services/authService";
 
 async function buildHeaders(extra = {}) {
-  const token = await getAuthToken();
+  const token = await SecureStore.getItemAsync("accessToken");
 
   return {
     "Content-Type": "application/json",

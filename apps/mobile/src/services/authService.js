@@ -1,22 +1,23 @@
 // src/services/authService.js
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { userApi } from "../api/userApi"; // 🔥 통합된 userApi 사용
+import * as SecureStore from 'expo-secure-store'; // ✅ 수정: AsyncStorage -> SecureStore
+import { userApi } from "../api/userApi";
 
-const TOKEN_KEY = "castaway_auth_token";
+// ✅ 수정: client.js가 찾는 키 이름("accessToken")과 똑같이 맞춰줍니다.
+const TOKEN_KEY = "accessToken"; 
 
 // 토큰 저장
 export async function saveAuthToken(token) {
-  await AsyncStorage.setItem(TOKEN_KEY, token);
+  await SecureStore.setItemAsync(TOKEN_KEY, token);
 }
 
 // 토큰 조회
 export async function getAuthToken() {
-  return await AsyncStorage.getItem(TOKEN_KEY);
+  return await SecureStore.getItemAsync(TOKEN_KEY);
 }
 
 // 토큰 삭제
 export async function clearAuthToken() {
-  await AsyncStorage.removeItem(TOKEN_KEY);
+  await SecureStore.deleteItemAsync(TOKEN_KEY); // SecureStore는 deleteItemAsync 사용
 }
 
 // (나중에 API 호출할 때 헤더가 필요하면 사용)

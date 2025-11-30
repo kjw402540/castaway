@@ -8,7 +8,13 @@
     "dev:api": "pnpm --filter @castaway/api dev",
     "dev:mobile": "pnpm --filter @castaway/mobile expo start --tunnel"
   },
- "pnpm": {
-    "onlyBuiltDependencies": ["sharp"]
+  "pnpm": {
+    "onlyBuiltDependencies": ["sharp"],
+       
+    "overrides": {
+      "react": "19.1.0",
+      "react-dom": "19.1.0",
+      "react-native": "0.81.5"
+    }
   }
 }
