@@ -1,25 +1,23 @@
 // src/routes/notificationRoutes.js
-import express from "express";
-import * as notificationController from "../controllers/notificationController.js";
 
-const router = express.Router();
+import { Router } from "express";
+import * as ctrl from "../controllers/notificationController.js";
 
-/* ----------------------------------------
-   최신 알림 N개 조회
-   GET /notification
------------------------------------------ */
-router.get("/", notificationController.getByUser);
+const router = Router();
 
-/* ----------------------------------------
-   알림 단일 조회
-   GET /notification/:id
------------------------------------------ */
-router.get("/:id", notificationController.getById);
+// 전체 조회 (?type=3 → Mail만)
+router.get("/", ctrl.getList);
 
-/* ----------------------------------------
-   알림 삭제
-   DELETE /notification/:id
------------------------------------------ */
-router.delete("/:id", notificationController.remove);
+// 단일 조회
+router.get("/:id", ctrl.getById);
+
+// 생성 (Mail 포함)
+router.post("/", ctrl.create);
+
+// 읽음 처리
+router.patch("/:id/read", ctrl.markAsRead);
+
+// 삭제
+router.delete("/:id", ctrl.remove);
 
 export default router;

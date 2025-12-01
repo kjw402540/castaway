@@ -1,38 +1,42 @@
+// =============================================================
+// File: src/components/common/NavigationBar.js
+// Purpose: Notification 기반 Mail Badge 업데이트 (rename 반영)
+// =============================================================
+
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons, Entypo, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 
-import { getAllMail, subscribeMailUpdate } from "../../services/mailService";
+import { 
+  fetchMailList, 
+  subscribeNotificationUpdate 
+} from "../../services/notificationService";
 
 export default function NavigationBar() {
   const navigation = useNavigation();
   const route = useRoute();
 
   const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // -------------------------------------------------------
-  // 메일 badge 카운트 로드 + mail 업데이트 구독
-  // -------------------------------------------------------
+  // 뱃지 로딩
   useEffect(() => {
     const loadBadge = async () => {
-      const mails = await getAllMail();
+      setLoading(true);
+      const mails = await fetchMailList(); // mail → notification 기반 데이터
       const unread = mails.filter((m) => !m.read).length;
       setUnreadCount(unread);
+      setLoading(false);
     };
 
-    // 최초 1회 로드
     loadBadge();
-
-    // mailMock / mailService에서 notifyMailUpdate() 실행될 때 반영
-    const unsubscribe = subscribeMailUpdate(loadBadge);
-
+    const unsubscribe = subscribeNotificationUpdate(loadBadge);
     return () => unsubscribe();
   }, []);
 
-  // -------------------------------------------------------
-  // 탭 목록
-  // -------------------------------------------------------
+  const showBadge = !loading && unreadCount > 0;
+
   const tabs = [
     {
       name: "Home",
@@ -58,11 +62,7 @@ export default function NavigationBar() {
       icon: (active) => (
         <View style={{ position: "relative" }}>
           <Ionicons name="mail" size={22} color={active ? "#1E3A8A" : "#6B7280"} />
-
-          {/* 빨간 점 뱃지 */}
-          {unreadCount > 0 && (
-            <View style={styles.badge} />
-          )}
+          {showBadge && <View style={styles.badge} />}
         </View>
       ),
     },
@@ -74,14 +74,10 @@ export default function NavigationBar() {
     },
   ];
 
-  // -------------------------------------------------------
-  // 렌더링
-  // -------------------------------------------------------
   return (
     <View style={styles.container}>
       {tabs.map((tab) => {
         const isActive = route.name === tab.name;
-
         return (
           <TouchableOpacity
             key={tab.name}

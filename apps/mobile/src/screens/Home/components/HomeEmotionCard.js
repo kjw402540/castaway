@@ -1,4 +1,4 @@
-// src/screens/Home/components/EmotionResultCard.js
+// src/screens/Home/components/HomeEmotionCard.js
 
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
@@ -12,21 +12,22 @@ const EMOTION_MAP = {
   4: { label: "놀람/불안", icon: "emoticon-confused-outline", color: "#8B5CF6" },
 };
 
-export default function EmotionResultCard({ emotionResult, onClose }) {
+export default function HomeEmotionCard({ emotionResult, onClose }) {
   if (!emotionResult) return null;
 
   const { main_emotion, keyword_1, keyword_2, keyword_3, summary_text } =
     emotionResult;
 
   const emotionInfo = EMOTION_MAP[main_emotion] || EMOTION_MAP[2];
-  const keywords = [keyword_1, keyword_2, keyword_3].filter((k) => k);
+  const keywords = [keyword_1, keyword_2, keyword_3].filter(Boolean);
 
   return (
     <View style={styles.card}>
-      {/* 헤더 + 닫기 버튼 */}
+      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>오늘의 감정 분석</Text>
-
+        <Text style={[styles.title, { color: emotionInfo.color }]}>
+          오늘의 감정 분석
+        </Text>
         <TouchableOpacity onPress={onClose}>
           <MaterialCommunityIcons
             name="close"
@@ -37,6 +38,7 @@ export default function EmotionResultCard({ emotionResult, onClose }) {
         </TouchableOpacity>
       </View>
 
+      {/* Emotion row */}
       <View style={styles.emotionRow}>
         <MaterialCommunityIcons
           name={emotionInfo.icon}
@@ -46,24 +48,34 @@ export default function EmotionResultCard({ emotionResult, onClose }) {
         <View style={styles.emotionTextContainer}>
           <Text style={styles.mainEmotionText}>
             오늘의 기분은{" "}
-            <Text style={{ color: emotionInfo.color }}>
+            <Text style={{ color: emotionInfo.color, fontWeight: "800" }}>
               {emotionInfo.label}
             </Text>{" "}
             이네요.
           </Text>
-          {summary_text ? (
+
+          {summary_text && (
             <Text style={styles.subText} numberOfLines={2}>
               {summary_text}
             </Text>
-          ) : null}
+          )}
         </View>
       </View>
 
+      {/* Keywords */}
       {keywords.length > 0 && (
         <View style={styles.keywordContainer}>
           {keywords.map((k, i) => (
-            <View key={i} style={styles.chip}>
-              <Text style={styles.chipText}>#{k}</Text>
+            <View
+              key={i}
+              style={[
+                styles.chip,
+                { backgroundColor: emotionInfo.color + "22" }, // 감정 색 투명
+              ]}
+            >
+              <Text style={[styles.chipText, { color: emotionInfo.color }]}>
+                #{k}
+              </Text>
             </View>
           ))}
         </View>
@@ -77,10 +89,6 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 20,
     padding: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
     elevation: 5,
   },
   header: {
@@ -90,10 +98,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   title: {
-    fontSize: 12,
-    color: "#9CA3AF",
+    fontSize: 13,
     fontWeight: "700",
-    textTransform: "uppercase",
   },
   emotionRow: {
     flexDirection: "row",
@@ -105,7 +111,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mainEmotionText: {
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "700",
     color: "#1F2937",
   },
@@ -113,22 +119,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#6B7280",
     marginTop: 4,
-    lineHeight: 18,
   },
   keywordContainer: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    marginTop: 8,
+    gap: 6,
   },
   chip: {
-    backgroundColor: "#F3F4F6",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 12,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 10,
   },
   chipText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#4B5563",
   },
 });
