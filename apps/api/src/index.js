@@ -17,7 +17,8 @@ import userRoutes from "./routes/userRoutes.js";
 import clusterRoutes from "./routes/clusterRoutes.js";
 
 // cron
-import { startEmotionPredictionJob } from "./services/cronService.js";
+import { startEmotionPredictionJob } from "./jobs/emotionPredictJob.js";
+import { initScheduledJobs } from './jobs/reportJob.js';
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.use((err, req, res, next) => {
 });
 
 startEmotionPredictionJob();
+initScheduledJobs();
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
