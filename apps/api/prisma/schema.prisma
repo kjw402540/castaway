@@ -67,7 +67,6 @@ model EmotionResult {
   BGM          BGM[]
   diary        Diary?
   Object       Object[]
-  Report       Report[]
 }
 
 model Object {
@@ -96,26 +95,26 @@ model BGM {
 }
 
 model Report {
-  report_id            Int           @id @default(autoincrement())
+  report_id            Int      @id @default(autoincrement())
   user_id              Int
-  emotion_id           Int
-  start_date           DateTime      @db.Date
-  end_date             DateTime      @db.Date
+  start_date           DateTime @db.Date
+  end_date             DateTime @db.Date
   summary_text         String?
   encouragement_text   String?
   emotion_distribution Json?
-  created_date         DateTime      @default(now()) @db.Timestamp(6)
-  EmotionResult        EmotionResult @relation(fields: [emotion_id], references: [emotion_id])
-  user                 User          @relation(fields: [user_id], references: [user_id])
+  created_date         DateTime @default(now()) @db.Timestamp(6)
+  user                 User     @relation(fields: [user_id], references: [user_id])
 }
 
 model Notification {
-  notify_id   Int      @id @default(autoincrement())
-  user_id     Int
-  message     String
-  notify_time DateTime @default(now()) @db.Timestamp(6)
-  type        Int
-  user        User     @relation(fields: [user_id], references: [user_id])
+  notify_id    Int      @id @default(autoincrement())
+  user_id      Int
+  type         Int      @default(0)
+  title        String   @db.VarChar(100)
+  message      String?
+  is_read      Boolean  @default(false)
+  created_date DateTime @default(now()) @db.Timestamp(6)
+  user         User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_notification_user")
 }
 
 model EmotionPrediction {
