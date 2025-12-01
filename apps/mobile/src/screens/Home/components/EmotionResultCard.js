@@ -1,10 +1,9 @@
 // src/screens/Home/components/EmotionResultCard.js
 
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-// 감정 ID(0~4) 매핑
 const EMOTION_MAP = {
   0: { label: "화남/혐오", icon: "emoticon-angry-outline", color: "#EF4444" },
   1: { label: "기쁨", icon: "emoticon-happy-outline", color: "#F59E0B" },
@@ -13,42 +12,53 @@ const EMOTION_MAP = {
   4: { label: "놀람/불안", icon: "emoticon-confused-outline", color: "#8B5CF6" },
 };
 
-export default function EmotionResultCard({ emotionResult }) {
+export default function EmotionResultCard({ emotionResult, onClose }) {
   if (!emotionResult) return null;
 
-  const { main_emotion, keyword_1, keyword_2, keyword_3, summary_text } = emotionResult;
-  
-  // 데이터가 없을 경우 기본값(평온함) 처리
+  const { main_emotion, keyword_1, keyword_2, keyword_3, summary_text } =
+    emotionResult;
+
   const emotionInfo = EMOTION_MAP[main_emotion] || EMOTION_MAP[2];
-  
-  // 키워드 배열로 변환 (null 제외)
-  const keywords = [keyword_1, keyword_2, keyword_3].filter(k => k);
+  const keywords = [keyword_1, keyword_2, keyword_3].filter((k) => k);
 
   return (
     <View style={styles.card}>
+      {/* 헤더 + 닫기 버튼 */}
       <View style={styles.header}>
         <Text style={styles.title}>오늘의 감정 분석</Text>
-        <MaterialCommunityIcons name="auto-fix" size={16} color="#6B7280" />
+
+        <TouchableOpacity onPress={onClose}>
+          <MaterialCommunityIcons
+            name="close"
+            size={20}
+            color="#6B7280"
+            style={{ padding: 4 }}
+          />
+        </TouchableOpacity>
       </View>
 
-      {/* 감정 아이콘 & 텍스트 */}
       <View style={styles.emotionRow}>
-        <MaterialCommunityIcons 
-          name={emotionInfo.icon} 
-          size={36} 
-          color={emotionInfo.color} 
+        <MaterialCommunityIcons
+          name={emotionInfo.icon}
+          size={36}
+          color={emotionInfo.color}
         />
         <View style={styles.emotionTextContainer}>
           <Text style={styles.mainEmotionText}>
-            오늘의 기분은 <Text style={{ color: emotionInfo.color }}>{emotionInfo.label}</Text> 이네요.
+            오늘의 기분은{" "}
+            <Text style={{ color: emotionInfo.color }}>
+              {emotionInfo.label}
+            </Text>{" "}
+            이네요.
           </Text>
           {summary_text ? (
-            <Text style={styles.subText} numberOfLines={2}>{summary_text}</Text>
+            <Text style={styles.subText} numberOfLines={2}>
+              {summary_text}
+            </Text>
           ) : null}
         </View>
       </View>
 
-      {/* 키워드 칩 */}
       {keywords.length > 0 && (
         <View style={styles.keywordContainer}>
           {keywords.map((k, i) => (
@@ -64,10 +74,9 @@ export default function EmotionResultCard({ emotionResult }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "rgba(255, 255, 255, 0.95)", // 살짝 반투명
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 20,
     padding: 20,
-    // 그림자 효과
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -78,6 +87,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 12,
+    alignItems: "center",
   },
   title: {
     fontSize: 12,

@@ -38,36 +38,38 @@ export const getByDate = async (req, res, next) => {
 };
 
 /* ------------------------------------------------------------------
-   POST /api/diary (일기 작성 & AI 분석 트리거)
+   POST /api/diary (일기 작성 + AI 분석 즉시 반영)
 ------------------------------------------------------------------ */
 export const create = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    
-    // 1. [Node -> DB] 일기 내용 저장 (트랜잭션 처리됨)
+
+    // (1) 일기 DB 저장
     const newDiary = await diaryService.create(userId, req.body);
-    
-    res.json(newDiary);
 
-    setTimeout(() => {
-        // 방금 저장된 일기의 ID(diary_id)와 본문(original_text) 확인
-        if (newDiary.diary_id && newDiary.original_text) {
-            
-            // 🚀 [핵심] AI 서비스의 통합 워크플로우 함수 호출
-            // (감정분석 -> EmotionResult 저장 -> BGM 생성 -> Diary 업데이트)
-            aiService.runFullAnalysisWorkflow(newDiary.diary_id, newDiary.original_text)
-                .catch(err => {
-                    // 백그라운드 에러는 서버 콘솔에만 남김 (서버 죽지 않음)
-                    console.error("❌ [Background] AI 분석 트리거 실패:", err);
-                });
+    if (!newDiary.diary_id || !newDiary.original_text) {
+      throw new Error("❌ 분석 불가: diary_id 또는 text 누락");
+    }
 
-        } else {
-            console.error("❌ [Background] 분석 불가: diary_id 또는 text 누락", newDiary);
-        }
-    }, 0);
+    // (2) 감정 분석 + DB 연동까지 끝날 때까지 기다림
+    const emotionLabel = await aiService.runFullAnalysisWorkflow(
+      newDiary.diary_id,
+      newDiary.original_text
+    );
+
+    // (3) 분석 결과가 반영된 최신 Diary 재조회
+    const finalDiary = await diaryService.getByDate(
+      userId,
+      req.body.date
+    );
+
+    // 👉 감정 레이블 포함하여 즉시 응답!
+    res.json({
+      ...finalDiary,
+      emotion_label: emotionLabel,
+    });
 
   } catch (err) {
-    // DB 저장 단계에서 실패하면 에러 응답 보냄
     next(err);
   }
 };

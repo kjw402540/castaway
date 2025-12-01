@@ -1,7 +1,7 @@
 // IslandScene.js
 import React from "react";
 import { View } from "react-native";
-import { useEmotion } from "../../context/EmotionContext";
+import { useTheme } from "../../context/ThemeContext";
 import { islandStyles as s } from "./IslandSceneStyles";
 
 import SkyLayer from "./SkyLayer";
@@ -14,7 +14,7 @@ function IslandScene({
   onPressTurntableDetail,
   onPressTree,
 }) {
-  const { emotion } = useEmotion();
+  const { emotion } = useTheme();
   const normalizedEmotion = emotion || "Neutral";
 
   return (
