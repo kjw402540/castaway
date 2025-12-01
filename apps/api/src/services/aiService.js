@@ -173,6 +173,7 @@ export const runFullAnalysisWorkflow = async (diaryId, text) => {
     // }
 
     console.log(`🏁 [AI Workflow] 모든 작업 최종 완료!`);
+    return analyzeResult.emotion_label; 
 
   } catch (error) {
     console.error(`❌ [AI Workflow] 에러 발생:`, error.message);

@@ -1,15 +1,15 @@
 import "react-native-gesture-handler";
 import React from "react";
-import { EmotionProvider } from "./src/context/EmotionContext";
+import { ThemeProvider } from "./src/context/ThemeContext"; // 🔥 변경
 import { SoundProvider } from "./src/context/SoundContext";
 import AppNavigator from "./src/app/AppNavigator";
 
 export default function App() {
   return (
-    <EmotionProvider>
+    <ThemeProvider>
       <SoundProvider>
         <AppNavigator />
       </SoundProvider>
-    </EmotionProvider>
+    </ThemeProvider>
   );
 }
