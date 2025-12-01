@@ -6,8 +6,6 @@ import { reportApi } from "../api/reportApi";
 export const getWeeklyReport = async () => {
   try {
     const response = await reportApi.getWeeklyReport();
-    
-    console.log("🔍 [Service] API 응답 원본:", response);
 
     // [핵심 수정] 
     // Case A: 응답이 { data: { ... } } 형태인 경우 (일반적인 Axios 응답)

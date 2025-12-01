@@ -1,7 +1,15 @@
-// src/services/diaryService.js
 import { USE_API } from "../config/apiConfig";
 import { diaryApi } from "../api/diaryApi";
 import { diaryMock } from "../mocks/diaryMock";
+
+// ✅ [Helper] UTC 문자열을 로컬 시간(KST) YYYY-MM-DD로 변환
+const toLocalYMD = (isoString) => {
+  const date = new Date(isoString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 export const getAllDiaries = async () => {
   if (USE_API) {
@@ -11,8 +19,13 @@ export const getAllDiaries = async () => {
 
       const map = {};
       list.forEach((diary) => {
+        // flag 체크는 기존대로 유지
         if (diary.created_date && diary.flag === 1) {
-          const dateKey = diary.created_date.split("T")[0];
+          
+          // ❌ 기존: const dateKey = diary.created_date.split("T")[0]; 
+          // ⭕ 수정: 로컬 시간 기준으로 날짜 키 생성
+          const dateKey = toLocalYMD(diary.created_date);
+
           map[dateKey] = {
             ...diary,
             text: diary.original_text,
@@ -30,6 +43,7 @@ export const getAllDiaries = async () => {
   }
 };
 
+// ... 나머지 코드는 그대로 두면 됨 ...
 export const getDiaryByDate = (date) =>
   USE_API ? diaryApi.getByDate(date) : diaryMock.getByDate(date);
 
@@ -54,7 +68,6 @@ export const saveDiary = async (data) => {
 
   notifyDiaryUpdate();
 
-  // 감정 레이블을 확실히 프론트로 보내도록
   return {
     ...result,
     text: result.original_text ?? data.text,

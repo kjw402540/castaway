@@ -39,73 +39,76 @@ export const getById = async (id) => {
    ★ 핵심: 주간 리포트 생성 (Generate)
    - 특정 날짜를 받으면 그 주(월~일)의 데이터를 긁어와서 생성
 -------------------------------------------------------- */
+const toLocalYMD = (dateObj) => {
+  const d = new Date(dateObj);
+  // 한국 시간은 UTC+9니까 9시간을 더해서 계산하거나, 
+  // getFullYear, getMonth 등을 직접 쓰면 서버 로컬 시간을 따름.
+  // 가장 안전한 방법: 직접 포맷팅
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export const generateWeekly = async (userId, targetDate) => {
-  // 1. 날짜 범위 계산 (월요일 00:00 ~ 일요일 23:59)
+  // 1. 기준 날짜 잡기
   const date = new Date(targetDate);
   const day = date.getDay(); // 0(일)~6(토)
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1); // 월요일 기준
-
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  
   const startDate = new Date(date);
   startDate.setDate(diff);
-  startDate.setHours(0, 0, 0, 0);
+  startDate.setHours(0, 0, 0, 0); // 월요일 00:00
 
   const endDate = new Date(startDate);
   endDate.setDate(startDate.getDate() + 6);
-  endDate.setHours(23, 59, 59, 999);
+  endDate.setHours(23, 59, 59, 999); // 일요일 23:59
 
   console.log(`[Report] 생성 범위: ${startDate.toISOString()} ~ ${endDate.toISOString()}`);
 
   // 2. 해당 기간의 EmotionResult(일기 분석 결과) 조회
-  // 주의: prisma.schema에 EmotionResult -> Diary 관계가 연결되어 있어야 함
   const weeklyLogs = await prisma.emotionResult.findMany({
     where: {
       diary: {
-        // [수정] 관계를 통해 user_id 조회 (가장 안전한 방법)
-        user: {
-          user_id: Number(userId),
-        },
-        // [수정] date 컬럼 없음 -> created_date 사용
+        user_id: Number(userId),
         created_date: {
           gte: startDate,
           lte: endDate,
         },
+        flag: 1, // 삭제 안 된 것만
       },
     },
     select: {
       main_emotion: true,
       summary_text: true,
-      diary: { 
-        // [수정] date 컬럼 없음 -> created_date 선택
-        select: { created_date: true } 
+      diary: {
+        select: { created_date: true },
       },
     },
   });
 
-  if (!weeklyLogs || weeklyLogs.length === 0) {
-    throw new Error("해당 기간에 분석할 일기 데이터가 없습니다.");
-  }
-
+  // 3. 빈 날짜 채우기 (월~일)
   const dailyHistory = [];
-  const days = ["일", "월", "화", "수", "목", "금", "토"]; // JS Date.getDay() 기준
+  const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
 
-  // startDate부터 7일 반복
+  // startDate(월) 부터 7일간 반복
   for (let i = 0; i < 7; i++) {
     const d = new Date(startDate);
     d.setDate(startDate.getDate() + i);
     
-    // 날짜 비교를 위해 YYYY-MM-DD 문자열 변환
-    const dateStr = d.toISOString().split('T')[0];
-    
-    // 해당 날짜에 쓴 일기가 있는지 찾기
-    const log = weeklyLogs.find(l => 
-      // [수정] l.diary.date -> l.diary.created_date
-      l.diary.created_date.toISOString().split('T')[0] === dateStr
-    );
+    // ✅ [핵심 수정] UTC 변환 없이 로컬 날짜 문자열끼리 비교!
+    const targetYMD = toLocalYMD(d); 
+
+    // DB에서 가져온 데이터 중 날짜가 같은 놈 찾기
+    const log = weeklyLogs.find((l) => {
+      const logYMD = toLocalYMD(l.diary.created_date);
+      return logYMD === targetYMD;
+    });
 
     dailyHistory.push({
-      day: days[d.getDay()], // 월, 화, 수...
-      date: dateStr,
-      emotion: log ? log.main_emotion : null, // 없으면 null (중요!)
+      day: dayLabels[d.getDay()], // 월, 화, 수...
+      date: targetYMD,
+      emotion: log ? log.main_emotion : null, // 없으면 null
     });
   }
 

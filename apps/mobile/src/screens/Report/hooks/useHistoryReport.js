@@ -2,12 +2,13 @@
 import { useState, useEffect } from "react";
 import { getHistoryReports } from "../../../services/reportService";
 
+// ✅ [수정] 색상표 통일
 const EMOTION_COLOR = {
-  0: "#EF4444", // 분노
-  1: "#3B82F6", // 기쁨
-  2: "#9CA3AF", // 중립
-  3: "#60A5FA", // 슬픔
-  4: "#EC4899", // 놀람
+  0: "#EF4444", // 분노 (Red)
+  1: "#F59E0B", // 기쁨 (Yellow/Amber) 👈 여기 수정함!
+  2: "#10B981", // 중립 (Green)
+  3: "#3B82F6", // 슬픔 (Blue)
+  4: "#8B5CF6", // 놀람 (Purple)
 };
 
 const EMOTION_LABEL = {
@@ -19,29 +20,30 @@ export function useHistoryReport() {
 
   useEffect(() => {
     async function load() {
-      const data = await getHistoryReports();
-      // DB 데이터를 UI List 포맷으로 변환
-      const formatted = data.map((item) => {
-        // start_date를 파싱해서 몇 월 몇 주차인지 계산
-        const dateObj = new Date(item.start_date);
-        const year = dateObj.getFullYear();
-        // 간단하게 주차 계산 (혹은 DB에서 주차를 받아오는 게 좋음)
-        const week = getWeekNumber(dateObj); 
+      try {
+        const data = await getHistoryReports();
         
-        // 메인 감정 찾기 (counts 중 가장 큰 값)
-        const counts = item.emotion_distribution?.counts || {};
-        const mainKey = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, 2);
+        const formatted = data.map((item) => {
+          const dateObj = new Date(item.start_date);
+          const year = dateObj.getFullYear();
+          const week = getWeekNumber(dateObj); 
+          
+          const counts = item.emotion_distribution?.counts || {};
+          const mainKey = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, 2);
 
-        return {
-          id: item.report_id, // 네비게이션용 ID
-          year: year,
-          week: week,
-          mainEmotion: EMOTION_LABEL[mainKey],
-          trend: "?", // 트렌드 데이터 없음
-          color: EMOTION_COLOR[mainKey],
-        };
-      });
-      setHistory(formatted);
+          return {
+            id: item.report_id,
+            year: year,
+            week: week,
+            mainEmotion: EMOTION_LABEL[mainKey],
+            trend: "?", 
+            color: EMOTION_COLOR[mainKey],
+          };
+        });
+        setHistory(formatted);
+      } catch (e) {
+        // console.error(e); // 에러 로그도 일단 끔
+      }
     }
     load();
   }, []);
@@ -49,7 +51,7 @@ export function useHistoryReport() {
   return history;
 }
 
-// 주차 계산 헬퍼
+// 주차 계산 헬퍼 (그대로 유지)
 function getWeekNumber(d) {
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
