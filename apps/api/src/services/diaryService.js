@@ -100,19 +100,26 @@ export const create = async (userId, data) => {
 };
 
 /* ----------------------------------------------------
-   일기 삭제 (Soft Delete 권장하지만 일단 코드대로)
+   일기 삭제 (Soft Delete 적용 완료)
 ---------------------------------------------------- */
 export const remove = async (userId, ymd) => {
+  // 날짜 범위 설정 (기존 로직 유지)
   const date = new Date(`${ymd}T00:00:00`);
   const next = new Date(`${ymd}T23:59:59`);
 
-  return await prisma.diary.deleteMany({
+  // deleteMany -> updateMany로 변경
+  return await prisma.diary.updateMany({
     where: {
       user_id: Number(userId),
       created_date: {
         gte: date,
         lte: next,
-      }
-    }
+      },
+      // (선택사항) 굳이 flag: 1인 것만 찾을 필요 없이 
+      // 해당 날짜의 모든 데이터를 0으로 만들어버리면 확실하게 안 보이게 됨.
+    },
+    data: {
+      flag: 0, // 삭제 대신 flag를 0으로 내림
+    },
   });
 };
