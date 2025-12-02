@@ -57,7 +57,9 @@ export const markAsRead = async (req, res, next) => {
 // 선택/전체 삭제
 export const removeBulk = async (req, res, next) => {
   try {
-    const removed = await service.removeMany(req.body.ids, getUserId(req));
+    // 🔥 body에 ids 없으면 "all" 취급 (DELETE /notification/all)
+    const ids = req.body?.ids ?? "all";
+    const removed = await service.removeMany(ids, getUserId(req));
     res.json({ ok: true, removed });
   } catch (err) {
     next(err);
