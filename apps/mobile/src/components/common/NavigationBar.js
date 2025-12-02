@@ -1,37 +1,44 @@
+// src/components/navigation/NavigationBar.js
+// 하단 NavigationBar 컴포넌트
+// Notification(알림함) Badge 표시 기능 포함
+
 import React, { useEffect, useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Ionicons, Entypo, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
 
-import { getAllMail, subscribeMailUpdate } from "../../services/mailService";
+// 알림 목록 조회 API (프론트 DB Notification 처리용)
+import { getAllNotification } from "../../services/notificationService";
 
 export default function NavigationBar() {
   const navigation = useNavigation();
   const route = useRoute();
 
+  // 읽지 않은 알림 개수 (배지 표시)
   const [unreadCount, setUnreadCount] = useState(0);
 
   // -------------------------------------------------------
-  // 메일 badge 카운트 로드 + mail 업데이트 구독
+  // Notification badge 카운트 로드
+  // DB에 저장된 알림 중 is_read === false 개수만 표시
   // -------------------------------------------------------
   useEffect(() => {
     const loadBadge = async () => {
-      const mails = await getAllMail();
-      const unread = mails.filter((m) => !m.read).length;
-      setUnreadCount(unread);
+      try {
+        const list = await getAllNotification();
+        const unread = list.filter((n) => !n.is_read).length;
+        setUnreadCount(unread);
+      } catch (err) {
+        console.warn("Notification load error:", err);
+      }
     };
 
-    // 최초 1회 로드
     loadBadge();
 
-    // mailMock / mailService에서 notifyMailUpdate() 실행될 때 반영
-    const unsubscribe = subscribeMailUpdate(loadBadge);
-
-    return () => unsubscribe();
+    // ※ 훗날: AppFocus 이벤트 or 실시간 WebSocket 연동 시 loadBadge() 다시 호출
   }, []);
 
   // -------------------------------------------------------
-  // 탭 목록
+  // 하단 탭 구성
   // -------------------------------------------------------
   const tabs = [
     {
@@ -52,20 +59,22 @@ export default function NavigationBar() {
       icon: (active) =>
         <FontAwesome5 name="box-open" size={20} color={active ? "#1E3A8A" : "#6B7280"} />,
     },
+
+    // DB Notification (Mail) 기능을 담당하는 탭
+    // Badge: unreadCount > 0일 때 빨간 점 표시
     {
       name: "Mail",
       label: "Mail",
       icon: (active) => (
         <View style={{ position: "relative" }}>
-          <Ionicons name="mail" size={22} color={active ? "#1E3A8A" : "#6B7280"} />
-
-          {/* 빨간 점 뱃지 */}
+          <Ionicons name="notifications" size={22} color={active ? "#1E3A8A" : "#6B7280"} />
           {unreadCount > 0 && (
             <View style={styles.badge} />
           )}
         </View>
       ),
     },
+
     {
       name: "Profile",
       label: "Profile",
@@ -80,13 +89,13 @@ export default function NavigationBar() {
   return (
     <View style={styles.container}>
       {tabs.map((tab) => {
-        const isActive = route.name === tab.name;
+        const isActive = route.name === tab.name; // 현재 활성 탭 체크
 
         return (
           <TouchableOpacity
             key={tab.name}
             style={styles.tabItem}
-            onPress={() => navigation.navigate(tab.name)}
+            onPress={() => navigation.navigate(tab.name)} // 해당 탭 이동
           >
             {tab.icon(isActive)}
             <Text style={[styles.label, isActive && styles.active]}>
@@ -99,6 +108,9 @@ export default function NavigationBar() {
   );
 }
 
+// -------------------------------------------------------
+// 스타일
+// -------------------------------------------------------
 const styles = StyleSheet.create({
   container: {
     height: 70,
@@ -122,6 +134,8 @@ const styles = StyleSheet.create({
     color: "#1E3A8A",
     fontWeight: "600",
   },
+
+  // 빨간 뱃지 스타일
   badge: {
     position: "absolute",
     top: -3,
