@@ -108,12 +108,14 @@ model Report {
 }
 
 model Notification {
-  notify_id   Int      @id @default(autoincrement())
-  user_id     Int
-  message     String
-  notify_time DateTime @default(now()) @db.Timestamp(6)
-  type        Int
-  user        User     @relation(fields: [user_id], references: [user_id])
+  notify_id    Int      @id @default(autoincrement())
+  user_id      Int
+  type         Int      @default(0)
+  title        String   @db.VarChar(100)
+  message      String?
+  is_read      Boolean  @default(false)
+  created_date DateTime @default(now()) @db.Timestamp(6)
+  user         User     @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_notification_user")
 }
 
 model EmotionPrediction {

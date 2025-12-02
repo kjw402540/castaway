@@ -1,122 +1,101 @@
 // src/screens/Mail/hooks/useMail.js
+
 import { useState, useEffect, useCallback } from "react";
-import { 
-  getAllMail, 
-  deleteMail, 
-  markAsRead,
-  subscribeMailUpdate
-} from "../../../services/mailService";
+import {
+  fetchMailList,
+  fetchMailDetail,
+  markMailAsRead,
+  deleteMail,
+  subscribeNotificationUpdate,
+} from "../../../services/notificationService";
 
 export function useMail() {
   const [mails, setMails] = useState([]);
   const [selectedMailIds, setSelectedMailIds] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
   const [detailMail, setDetailMail] = useState(null);
 
-  // -------------------------------
-  // 메일 로드
-  // -------------------------------
+  // 메일 목록 로딩
   const loadMails = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await getAllMail();
+      const data = await fetchMailList();
       setMails(data);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  // 첫 로딩 + Notification 업데이트 시 다시 로딩
   useEffect(() => {
     loadMails();
-    
-    // 메일 업데이트 구독
-    const unsubscribe = subscribeMailUpdate(loadMails);
+
+    const unsubscribe = subscribeNotificationUpdate(loadMails);
     return () => unsubscribe();
   }, [loadMails]);
 
-  // -------------------------------
-  // 선택/해제
-  // -------------------------------
-  const toggleSelect = useCallback((id) => {
+  // 선택 토글
+  const toggleSelect = (id) => {
     setSelectedMailIds((prev) =>
       prev.includes(id)
-        ? prev.filter((v) => v !== id)
+        ? prev.filter((x) => x !== id)
         : [...prev, id]
     );
-  }, []);
+  };
 
-  const toggleSelectAll = useCallback(() => {
-    if (selectedMailIds.length === mails.length && mails.length > 0) {
+  // 선택 삭제
+  const handleDeleteSelected = async () => {
+    for (const id of selectedMailIds) {
+      await deleteMail(id);
+    }
+    setSelectedMailIds([]);
+    setIsEditMode(false);
+    loadMails();
+  };
+
+  // 전체 선택/해제
+  const toggleSelectAll = () => {
+    if (selectedMailIds.length === mails.length) {
       setSelectedMailIds([]);
     } else {
       setSelectedMailIds(mails.map((m) => m.id));
     }
-  }, [selectedMailIds, mails]);
+  };
 
-  // -------------------------------
   // 전체 삭제
-  // -------------------------------
-  const handleSelectAllDelete = useCallback(async () => {
-    await deleteMail("all");
-    setMails([]);
-    setSelectedMailIds([]);
-    setIsEditMode(false);
-  }, []);
-
-  // -------------------------------
-  // 선택 삭제
-  // -------------------------------
-  const handleDeleteSelected = useCallback(async () => {
-    if (selectedMailIds.length === 0) return;
-    
-    await deleteMail(selectedMailIds);
-    setMails((prev) => prev.filter((m) => !selectedMailIds.includes(m.id)));
-    setSelectedMailIds([]);
-    setIsEditMode(false);
-  }, [selectedMailIds]);
-
-  // -------------------------------
-  // 읽음 처리
-  // -------------------------------
-  const handleMarkAsRead = useCallback(async (id) => {
-    await markAsRead(id);
-
-    setMails((prev) =>
-      prev.map((m) =>
-        m.id === id ? { ...m, read: true } : m
-      )
-    );
-    
-    // detailMail도 업데이트
-    if (detailMail?.id === id) {
-      setDetailMail((prev) => prev ? { ...prev, read: true } : null);
+  const handleSelectAllDelete = async () => {
+    for (const m of mails) {
+      await deleteMail(m.id);
     }
-  }, [detailMail]);
+    setSelectedMailIds([]);
+    setIsEditMode(false);
+    loadMails();
+  };
 
-  // -------------------------------
-  // 네비게이션 빨간 뱃지용 unread count
-  // -------------------------------
-  const unreadCount = mails.filter((m) => !m.read).length;
+  // 읽음 처리
+  const handleMarkAsRead = async (id) => {
+    await markMailAsRead(id);
+    setMails((prev) =>
+      prev.map((m) => (m.id === id ? { ...m, read: true } : m))
+    );
+  };
 
   return {
     mails,
-    unreadCount,
-
     selectedMailIds,
     isEditMode,
     isLoading,
-
     detailMail,
+    unreadCount: mails.filter((m) => !m.read).length,
+
     setDetailMail,
+    setIsEditMode,
 
     toggleSelect,
     toggleSelectAll,
-
-    setIsEditMode,
-    handleSelectAllDelete,
     handleDeleteSelected,
+    handleSelectAllDelete,
     handleMarkAsRead,
   };
 }

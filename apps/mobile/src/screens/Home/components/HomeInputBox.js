@@ -1,10 +1,10 @@
-// src/screens/Home/components/InputBox.js
+// src/screens/Home/components/HomeInputBox.js
 
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-export default function InputBox({ onPressDiary }) {
+export default function HomeInputBox({ onPressDiary }) {
   return (
     <View style={styles.container}>
       <TouchableOpacity

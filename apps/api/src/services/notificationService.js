@@ -1,54 +1,52 @@
 // src/services/notificationService.js
+
 import prisma from "../lib/prisma.js";
 
-/* 최신 알림 조회 */
-export const getByUser = (userId, limit = 30) => {
+/**
+ * 전체 조회 (Mail 포함)
+ * ?type=3 -> Mail만 필터링
+ */
+export async function getList(userId, type = null, limit = 30) {
   return prisma.notification.findMany({
-    where: { user_id: Number(userId) },
-    orderBy: { notify_time: "desc" },
+    where: {
+      user_id: Number(userId),
+      ...(type !== null ? { type: Number(type) } : {})
+    },
+    orderBy: { created_date: "desc" },
     take: limit,
   });
-};
+}
 
-/* 단일 조회 */
-export const getById = (id) => {
+/** 단일 조회 */
+export async function getById(id) {
   return prisma.notification.findUnique({
-    where: { notify_id: Number(id) },
+    where: { notify_id: Number(id) }
   });
-};
+}
 
-/* 생성 */
-export const create = (data) => {
-  if (!data.user_id) throw new Error("user_id는 필수입니다.");
-  if (!data.message) throw new Error("message는 필수입니다.");
-
+/** 생성 */
+export async function create(data) {
   return prisma.notification.create({
     data: {
       user_id: Number(data.user_id),
-      message: data.message,
-      type: normalizeType(data.type), // INT
+      title: data.title ?? "알림",
+      message: data.message ?? "",
+      type: data.type ?? 0,
     },
   });
-};
+}
 
-/* 삭제 */
-export const remove = (id) => {
-  return prisma.notification.delete({
+/** 읽음 처리 */
+export async function markAsRead(id) {
+  return prisma.notification.update({
     where: { notify_id: Number(id) },
+    data: { is_read: true },
   });
-};
+}
 
-/* INT 타입으로 normalize */
-function normalizeType(type) {
-  const map = {
-    report: 0,
-    object: 1,
-    alert: 2,
-    system: 2,
-    0: 0,
-    1: 1,
-    2: 2,
-  };
-
-  return map[type] ?? 2;
+/** 삭제 */
+export async function remove(id) {
+  return prisma.notification.delete({
+    where: { notify_id: Number(id) }
+  });
 }
