@@ -1,74 +1,73 @@
-// src/controllers/notificationController.js
+// --------------------------------------------------------
+// apps/api/src/controllers/notificationController.js
+// Notification Controller
+// --------------------------------------------------------
 
-import * as notificationService from "../services/notificationService.js";
+import * as service from "../services/notificationService.js";
 
 function getUserId(req) {
   return req.user?.id || Number(req.query.userId) || 1;
 }
 
-/** 알림 전체 조회 (Mail 포함)
- * GET /api/notification
- * GET /api/notification?type=3 → Mail만 조회
- */
+// 전체 조회
 export const getList = async (req, res, next) => {
   try {
-    const userId = getUserId(req);
-    const { type } = req.query;
-
-    const list = await notificationService.getList(userId, type);
+    const list = await service.getList(getUserId(req));
     res.json(list);
   } catch (err) {
     next(err);
   }
 };
 
-/** 알림 단일 조회
- * GET /api/notification/:id
- */
+// 단일 조회
 export const getById = async (req, res, next) => {
   try {
-    const item = await notificationService.getById(req.params.id);
+    const item = await service.getById(req.params.id);
     res.json(item);
   } catch (err) {
     next(err);
   }
 };
 
-/** 알림 생성 (Mail 포함)
- * POST /api/notification
- */
+// 생성
 export const create = async (req, res, next) => {
   try {
-    const userId = getUserId(req);
-    const { title, message, type } = req.body;
-
-    const item = await notificationService.create({
-      user_id: userId,
-      title: title ?? "알림",
-      message: message ?? "",
-      type: type ?? 0,
+    const item = await service.create({
+      user_id: getUserId(req),
+      title: req.body.title,
+      message: req.body.message,
+      type: req.body.type,
     });
-
     res.json(item);
   } catch (err) {
     next(err);
   }
 };
 
-/** 읽음 처리 (PATCH /api/notification/:id/read) */
+// 읽음 처리
 export const markAsRead = async (req, res, next) => {
   try {
-    const updated = await notificationService.markAsRead(req.params.id);
-    res.json(updated);
+    const item = await service.markAsRead(req.params.id);
+    res.json({ ok: true, item });
   } catch (err) {
     next(err);
   }
 };
 
-/** 삭제 (DELETE /api/notification/:id) */
+// 선택/전체 삭제
+export const removeBulk = async (req, res, next) => {
+  try {
+    const removed = await service.removeMany(req.body.ids, getUserId(req));
+    res.json({ ok: true, removed });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 단일 삭제
 export const remove = async (req, res, next) => {
   try {
-    await notificationService.remove(req.params.id);
+    await service.remove(req.params.id);
     res.json({ ok: true });
   } catch (err) {
     next(err);
