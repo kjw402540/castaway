@@ -2,7 +2,7 @@
 import express from "express";
 import * as controller from "../controllers/notificationController.js";
 
-const router = express.Router();
+const router = Router();
 
 /* 최신 알림 조회 */
 router.get("/", controller.getByUser);

@@ -202,7 +202,8 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingHorizontal: 24,
     paddingTop: 10,
-    paddingBottom: 40,
+    // 👇 수정됨: 스크롤 영역 하단 여백을 늘려서 '로그아웃/회원탈퇴'가 위로 올라오도록 함
+    paddingBottom: 200,
   },
   header: {
     marginBottom: 20,
@@ -276,7 +277,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 30,
+    marginTop: 0,
     paddingVertical: 20,
     borderTopWidth: 1,
     borderTopColor: '#F3F4F6',

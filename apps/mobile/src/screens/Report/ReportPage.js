@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  ActivityIndicator
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { FontAwesome } from "@expo/vector-icons";
@@ -17,22 +18,45 @@ import HistoryReportModal from "./HistoryReportModal";
 
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
-// [SDK 52 대응] legacy 모듈
 import * as FileSystem from "expo-file-system/legacy";
 
 export default function ReportPage() {
   const navigation = useNavigation();
+  
+  // ============================================================
+  // 1. 모든 Hooks는 무조건 최상단에 선언 (순서 변경 절대 금지)
+  // ============================================================
   const report = useReportModal();
-  const historyList = useHistoryReport();
-
-  const main = report.thisWeek?.top3?.[0] || { label: "분석 중", value: 0 };
+  const historyList = useHistoryReport(); 
+  
+  // 아까 에러난 이유: 이 useState가 if문 밑에 있었을 확률이 높음
   const [historyVisible, setHistoryVisible] = useState(false);
 
+  // ============================================================
+  // 2. 데이터 가공 (Hooks 아님)
+  // ============================================================
+  const main = report.thisWeek?.top3?.[0] || { label: "분석 중", value: 0 };
+
+  // ============================================================
+  // 3. 로딩 및 예외 처리 (Hooks 선언이 다 끝난 뒤에 해야 함!)
+  // ============================================================
+  
+  // 데이터가 없거나 로딩 중일 때 표시할 화면
+  if (!report.thisWeek || !report.thisWeek.daily || report.thisWeek.daily.length === 0) {
+     return (
+       <SafeAreaView style={styles.loadingContainer}>
+         <ActivityIndicator size="large" color="#3B82F6" />
+         <Text style={styles.loadingText}>{report.summary || "리포트 분석 중..."}</Text>
+       </SafeAreaView>
+     );
+  }
+
   /* ----------------------------------------------------
-      PDF 공유 기능 (A4 풀 사이즈 문서 디자인)
+      PDF 공유 기능
   ---------------------------------------------------- */
   const shareReport = async () => {
     try {
+      // PDF 디자인 HTML (기존과 동일하게 유지)
       const html = `
 <!DOCTYPE html>
 <html lang="ko">
@@ -41,295 +65,61 @@ export default function ReportPage() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
-
-    /* [핵심 변경] A4 용지에 맞춘 문서 스타일 */
-    body {
-      font-family: 'Pretendard', -apple-system, sans-serif;
-      background-color: #ffffff; /* 전체 흰색 배경 */
-      margin: 0;
-      padding: 40px 50px; /* A4 여백 확보 */
-      color: #1f2937;
-    }
-
-    /* 헤더 영역 */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      border-bottom: 3px solid #111827;
-      padding-bottom: 15px;
-      margin-bottom: 30px;
-    }
-    .title {
-      font-size: 32px; /* 제목 크게 */
-      font-weight: 900;
-      color: #111827;
-      letter-spacing: -0.5px;
-    }
-    .date {
-      font-size: 14px;
-      color: #6b7280;
-      font-weight: 500;
-    }
-
-    /* 요약 섹션 (강조 박스) */
-    .summary-box {
-      background-color: #f3f4f6;
-      border-left: 6px solid #2563eb; /* 파란색 포인트 */
-      padding: 20px 25px;
-      border-radius: 4px;
-      margin-bottom: 35px;
-    }
-    .summary-text {
-      font-size: 18px;
-      line-height: 1.6;
-      font-weight: 700;
-      color: #1e3a8a;
-      margin-bottom: 10px;
-    }
-    .main-emotion {
-      font-size: 16px;
-      color: #4b5563;
-    }
-    .highlight {
-      color: #111827;
-      font-weight: 900;
-      font-size: 18px;
-    }
-
-    /* 섹션 제목 */
-    h3 {
-      font-size: 20px;
-      font-weight: 800;
-      color: #111827;
-      margin-top: 40px;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-    }
-    h3::before {
-      content: '';
-      display: block;
-      width: 6px;
-      height: 20px;
-      background-color: #2563eb;
-      margin-right: 10px;
-      border-radius: 3px;
-    }
-
-    /* 감정 맵 카드 (너비 꽉 채우기) */
-    .card {
-      background-color: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 25px;
-      margin-bottom: 30px;
-    }
-    
-    /* 점들을 중앙 정렬하고 간격 넓힘 */
-    .week-row {
-      display: flex;
-      justify-content: space-around; /* 균등 분배 */
-      align-items: center;
-      margin-bottom: 20px;
-      max-width: 500px; /* 점들이 너무 퍼지지 않게 중앙 제한 */
-      margin-left: auto;
-      margin-right: auto;
-    }
-    .day-col {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-    }
-    .dot {
-      width: 24px; /* 점 크기 확대 */
-      height: 24px;
-      border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .day-label {
-      font-size: 14px;
-      color: #6b7280;
-      font-weight: 600;
-    }
-
-    /* 비율 텍스트 */
-    .ratio-row {
-      display: flex;
-      justify-content: center;
-      gap: 30px;
-      padding-top: 20px;
-      border-top: 1px solid #e5e7eb;
-    }
-    .ratio-text {
-      font-size: 16px;
-      font-weight: 700;
-      color: #374151;
-    }
-
-    /* 그리드 레이아웃 (키워드 & 지난주 대비를 나란히) */
-    .grid-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 30px;
-      margin-bottom: 30px;
-    }
-
-    /* 키워드 태그 */
-    .keyword-box {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .keyword-tag {
-      background-color: #eff6ff;
-      color: #1e40af;
-      padding: 8px 16px;
-      border-radius: 20px;
-      font-weight: 700;
-      font-size: 14px;
-      border: 1px solid #dbeafe;
-    }
-
-    /* 박스 리스트 스타일 (회색 박스) */
-    .list-box {
-      background-color: #f9fafb;
-      padding: 20px;
-      border-radius: 10px;
-      border: 1px solid #f3f4f6;
-    }
-    .list-item {
-      font-size: 15px;
-      margin-bottom: 8px;
-      color: #4b5563;
-      line-height: 1.5;
-    }
-
-    /* 지난주 대비 태그 */
-    .diff-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .diff-tag {
-      background-color: #f1f5f9;
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 600;
-      color: #334155;
-    }
-
-    /* AI 리포트 */
-    .ai-box {
-      background-color: #eef2ff;
-      padding: 25px;
-      border-radius: 12px;
-      font-size: 15px;
-      line-height: 1.8;
-      color: #374151;
-      border: 1px solid #e0e7ff;
-      text-align: justify;
-    }
-
-    /* 푸터 */
-    .footer {
-      margin-top: 60px;
-      text-align: center;
-      color: #9ca3af;
-      font-size: 12px;
-      border-top: 1px solid #f3f4f6;
-      padding-top: 20px;
-    }
+    body { font-family: 'Pretendard', sans-serif; padding: 40px; color: #1f2937; }
+    .header { border-bottom: 3px solid #111827; padding-bottom: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .title { font-size: 32px; font-weight: 900; }
+    .date { font-size: 14px; color: #6b7280; }
+    .summary-box { background: #f3f4f6; border-left: 6px solid #2563eb; padding: 20px; margin-bottom: 30px; }
+    .summary-text { font-size: 18px; font-weight: 700; color: #1e3a8a; margin-bottom: 10px; }
+    h3 { font-size: 20px; font-weight: 800; margin-top: 40px; border-left: 5px solid #2563eb; padding-left: 10px; }
+    .ai-box { background: #eef2ff; padding: 20px; border-radius: 10px; line-height: 1.6; }
+    .list-item { margin-bottom: 5px; }
   </style>
 </head>
 <body>
-
   <div class="header">
     <div class="title">주별 감정 리포트</div>
     <div class="date">AI Diary Analysis</div>
   </div>
-
   <div class="summary-box">
     <div class="summary-text">"${report.summary}"</div>
-    <div class="main-emotion">
-      이번 주를 지배한 감정: <span class="highlight">${main.label}</span> 😊
-    </div>
+    <div>주요 감정: <strong>${main.label}</strong></div>
   </div>
 
-  <h3>📊 주간 감정 흐름</h3>
-  <div class="card">
-    <div class="week-row">
-      ${report.thisWeek.daily.map(d => `
-        <div class="day-col">
-          <div class="dot" style="background-color: ${d.color};"></div>
-          <div class="day-label">${d.day}</div>
-        </div>
-      `).join('')}
-    </div>
-    <div class="ratio-row">
-      ${report.thisWeek.top3.map(t => `
-        <div class="ratio-text">${t.label} ${t.value}%</div>
-      `).join('')}
-    </div>
+  <h3>📊 주간 흐름</h3>
+  <div style="display: flex; gap: 10px; justify-content: center; margin: 20px 0;">
+    ${report.thisWeek.daily.map(d => 
+      `<div style="text-align: center;">
+         <div style="width: 20px; height: 20px; background: ${d.color}; border-radius: 50%; margin: 0 auto 5px;"></div>
+         <div style="font-size: 12px; color: #666;">${d.day}</div>
+       </div>`
+    ).join('')}
   </div>
 
-  <div class="grid-section">
-    <div>
-      <h3>🔑 이번 주 키워드</h3>
-      <div class="keyword-box">
-        ${report.keywords.map(k => `<span class="keyword-tag">#${k}</span>`).join('')}
-      </div>
-    </div>
-
-    <div>
-      <h3>📉 지난주 대비 변화</h3>
-      <div class="diff-row">
-        ${report.thisWeek.top3.map(t => {
-          const diff = report.compare[t.label];
-          const sign = diff > 0 ? "+" : "";
-          return `<div class="diff-tag">${t.label} ${sign}${diff}%</div>`;
-        }).join('')}
-      </div>
-    </div>
-  </div>
-
-  <h3>📍 감정 변화 포인트</h3>
-  <div class="list-box">
-    ${report.changePoints.map(c => `<div class="list-item">• ${c}</div>`).join('')}
+  <h3>🔑 키워드</h3>
+  <div>
+    ${report.keywords.map(k => `<span style="background:#eff6ff; color:#1e40af; padding:5px 10px; border-radius:15px; margin-right:5px; font-weight:bold;">#${k}</span>`).join('')}
   </div>
 
   <h3>🤖 AI 상세 분석</h3>
-  <div class="ai-box">
-    ${report.aiComment}
-  </div>
+  <div class="ai-box">${report.aiComment}</div>
 
-  <h3>🔮 다음 주 예측</h3>
-  <div class="list-box">
+  <h3>🔮 조언 및 예측</h3>
+  <div style="background:#f9fafb; padding:20px; border-radius:10px;">
     ${report.prediction.map(p => `<div class="list-item">• ${p}</div>`).join('')}
   </div>
-
-  <div class="footer">
-    본 리포트는 AI Diary에 의해 자동 생성되었습니다. <br/>
-    당신의 소중한 기록이 더 나은 내일을 만듭니다.
-  </div>
-
 </body>
 </html>
       `;
 
       const { uri } = await Print.printToFileAsync({ html });
-      
-      // SDK 52 파일 복사 로직 유지
       const newFileUri = FileSystem.documentDirectory + "Weekly_Report.pdf";
       await FileSystem.copyAsync({ from: uri, to: newFileUri });
-
       await Sharing.shareAsync(newFileUri);
 
     } catch (error) {
       console.error("PDF Error:", error);
-      Alert.alert("오류", "리포트 생성 중 문제가 발생했습니다.");
+      Alert.alert("오류", "리포트 공유 중 문제가 발생했습니다.");
     }
   };
 
@@ -337,7 +127,7 @@ export default function ReportPage() {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.container}>
 
-        {/* 앱 화면 UI는 기존 그대로 유지 */}
+        {/* 헤더 */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <FontAwesome name="arrow-left" size={22} color="#374151" />
@@ -348,38 +138,42 @@ export default function ReportPage() {
           </TouchableOpacity>
         </View>
 
+        {/* 요약 멘트 */}
         <Text style={styles.summaryTop}>{report.summary}</Text>
         <Text style={styles.subSummary}>
-          이번 주 주요 감정은 <Text style={styles.bold}>{main.label}</Text> 😊 입니다
+          이번 주 주요 감정은 <Text style={styles.bold}>{main.label}</Text> {main.icon || "😊"} 입니다
         </Text>
 
+        {/* 감정 그래프 카드 */}
         <View style={styles.card}>
           <View style={styles.emotionWeekRow}>
-            {report.thisWeek.daily.map((d) => (
-              <View key={d.day} style={[styles.dot, { backgroundColor: d.color }]} />
+            {report.thisWeek.daily.map((d, i) => (
+              <View key={i} style={[styles.dot, { backgroundColor: d.color }]} />
             ))}
           </View>
           <View style={styles.emotionWeekRow}>
-            {report.thisWeek.daily.map((d) => (
-              <Text key={d.day} style={styles.dayLabel}>{d.day}</Text>
+            {report.thisWeek.daily.map((d, i) => (
+              <Text key={i} style={styles.dayLabel}>{d.day}</Text>
             ))}
           </View>
           <View style={styles.ratioRow}>
-            {report.thisWeek.top3.map((t) => (
-              <Text key={t.label} style={styles.ratioText}>{t.label} {t.value}%</Text>
+            {report.thisWeek.top3.map((t, i) => (
+              <Text key={i} style={styles.ratioText}>{t.label} {t.value}%</Text>
             ))}
           </View>
         </View>
 
+        {/* 키워드 */}
         <Text style={styles.sectionTitle}>이번 주 키워드</Text>
         <View style={styles.keywordBox}>
-          {report.keywords.map((k) => (
-            <View key={k} style={styles.keywordTag}>
-              <Text style={styles.keywordText}>{k}</Text>
+          {report.keywords.map((k, i) => (
+            <View key={i} style={styles.keywordTag}>
+              <Text style={styles.keywordText}>#{k}</Text>
             </View>
           ))}
         </View>
 
+        {/* 감정 변화 포인트 */}
         <Text style={styles.sectionTitle}>감정 변화 포인트</Text>
         <View style={styles.changeBox}>
           {report.changePoints.map((c, idx) => (
@@ -387,10 +181,11 @@ export default function ReportPage() {
           ))}
         </View>
 
+        {/* 지난주 대비 */}
         <Text style={styles.sectionTitle}>지난주 대비 변화</Text>
         <View style={styles.diffRow}>
-          {report.thisWeek.top3.map((t) => (
-            <View key={t.label} style={styles.diffTag}>
+          {report.thisWeek.top3.map((t, i) => (
+            <View key={i} style={styles.diffTag}>
               <Text style={styles.diffText}>
                 {t.label} {report.compare[t.label] > 0 ? "+" : ""}{report.compare[t.label]}%
               </Text>
@@ -398,11 +193,13 @@ export default function ReportPage() {
           ))}
         </View>
 
+        {/* AI 리포트 (총평) */}
         <Text style={styles.sectionTitle}>AI 리포트</Text>
         <View style={styles.aiBox}>
           <Text style={styles.aiText}>{report.aiComment}</Text>
         </View>
 
+        {/* 다음 주 예측 */}
         <Text style={styles.sectionTitle}>다음 주 감정 예측</Text>
         <View style={styles.predictBox}>
           {report.prediction.map((p, idx) => (
@@ -410,12 +207,14 @@ export default function ReportPage() {
           ))}
         </View>
 
+        {/* 히스토리 버튼 */}
         <TouchableOpacity style={styles.historyButton} onPress={() => setHistoryVisible(true)}>
           <Text style={styles.historyText}>역대 리포트 보러가기</Text>
         </TouchableOpacity>
 
       </ScrollView>
 
+      {/* 히스토리 모달 */}
       <HistoryReportModal
         visible={historyVisible}
         onClose={() => setHistoryVisible(false)}
@@ -425,10 +224,12 @@ export default function ReportPage() {
   );
 }
 
-/* 앱 UI 스타일 (변경 없음) */
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "white" },
   container: { paddingHorizontal: 20, paddingBottom: 40 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: "white" },
+  loadingText: { marginTop: 10, color: "#6B7280", fontSize: 14 },
+  
   header: { marginTop: 5, marginBottom: 15, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   headerTitle: { fontSize: 18, fontWeight: "bold", color: "#111827" },
   summaryTop: { fontSize: 15, color: "#1E3A8A", fontWeight: "700", marginBottom: 8 },

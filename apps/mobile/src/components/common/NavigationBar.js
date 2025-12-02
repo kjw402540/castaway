@@ -16,6 +16,7 @@ export default function NavigationBar() {
 
   // 읽지 않은 알림 개수 (배지 표시)
   const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   // -------------------------------------------------------
   // Notification badge 카운트 로드
@@ -83,9 +84,6 @@ export default function NavigationBar() {
     },
   ];
 
-  // -------------------------------------------------------
-  // 렌더링
-  // -------------------------------------------------------
   return (
     <View style={styles.container}>
       {tabs.map((tab) => {

@@ -1,8 +1,11 @@
 // src/controllers/notificationController.js
 
+
 import * as notificationService from "../services/notificationService.js";
 
-const USER_ID = 1;
+function getUserId(req) {
+  return req.user?.id || Number(req.query.userId) || 1;
+}
 
 /* 전체 조회 */
 export const getByUser = async (req, res, next) => {
@@ -48,8 +51,8 @@ export const removeBulk = async (req, res, next) => {
 /* 단일 삭제 */
 export const remove = async (req, res, next) => {
   try {
-    const removed = await notificationService.remove(req.params.id);
-    res.json({ ok: true, removed });
+    await notificationService.remove(req.params.id);
+    res.json({ ok: true });
   } catch (err) {
     next(err);
   }

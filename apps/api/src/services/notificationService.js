@@ -66,7 +66,7 @@ export const create = (data) => {
       is_read: false,
     },
   });
-};
+}
 
 /* -------------------------------------------------------
    읽음 처리
@@ -99,6 +99,7 @@ export const removeMany = async (ids, userId) => {
 export const remove = (id) => {
   return prisma.notification.delete({
     where: { notify_id: Number(id) },
+    data: { is_read: true },
   });
 };
 

@@ -35,9 +35,7 @@ export async function afterDiarySaved(diary) {
   }
 }
 
-/* -------------------------------------------------------------
-   1) 감정 분석 + EmotionResult DB 저장
--------------------------------------------------------------- */
+/* --------------------- 1) 감정 분석 저장 --------------------- */
 async function analyzeEmotion(diary) {
   const ai = await emotionAIService.analyze(diary.original_text);
 
@@ -50,8 +48,7 @@ async function analyzeEmotion(diary) {
     keyword_3: ai.keywords?.[2] ?? "",
   };
 
-  const emotionResult = await emotionService.save(resultData);
-  return emotionResult;
+  return await emotionService.save(resultData);
 }
 
 /* -------------------------------------------------------------
