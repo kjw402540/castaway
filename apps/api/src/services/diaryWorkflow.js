@@ -35,7 +35,9 @@ export async function afterDiarySaved(diary) {
   }
 }
 
-/* --------------------- 1) 감정 분석 저장 --------------------- */
+/* -------------------------------------------------------------
+   1) 감정 분석 + EmotionResult DB 저장
+-------------------------------------------------------------- */
 async function analyzeEmotion(diary) {
   const ai = await emotionAIService.analyze(diary.original_text);
 
@@ -48,55 +50,9 @@ async function analyzeEmotion(diary) {
     keyword_3: ai.keywords?.[2] ?? "",
   };
 
-  return await emotionService.save(resultData);
+  const emotionResult = await emotionService.save(resultData);
+  return emotionResult;
 }
-
-/* -------------------------------------------------------------
-   2) 오브제 생성 — 현재 비활성화
--------------------------------------------------------------- */
-// async function createObject(diary, emotionResult) {
-//   try {
-//     const objectName = pickObjectNameByEmotion(emotionResult.main_emotion);
-
-//     await objectService.create({
-//       diary_id: diary.diary_id,
-//       user_id: diary.user_id,
-//       emotion_id: emotionResult.emotion_id,
-//       object_name: objectName,
-//       object_image: "",
-//     });
-
-//   } catch (err) {
-//     console.error("[WORKFLOW][OBJECT] error", err);
-//   }
-// }
-
-// function pickObjectNameByEmotion(mainEmotionInt) {
-//   const map = {
-//     0: "fire_stone",
-//     1: "light_orb",
-//     2: "shell",
-//     3: "blue_drop",
-//     4: "fog_fragment",
-//   };
-//   return map[mainEmotionInt] ?? "shell";
-// }
-
-/* -------------------------------------------------------------
-   3) BGM 생성 — 현재 비활성화
--------------------------------------------------------------- */
-// async function createBgm(diary, emotionResult) {
-//   try {
-//     await bgmService.create({
-//       diary_id: diary.diary_id,
-//       user_id: diary.user_id,
-//       emotion_id: emotionResult.emotion_id,
-//       bgm_url: "",
-//     });
-//   } catch (err) {
-//     console.error("[WORKFLOW][BGM] error", err);
-//   }
-// }
 
 /* -------------------------------------------------------------
    4) Notification 생성

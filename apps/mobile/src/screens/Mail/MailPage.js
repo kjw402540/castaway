@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   header: {
-    fontSize: 26,
+    fontSize: 22,
     fontWeight: "700",
     color: "#1E3A8A",
   },
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   title: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: "#111827",
   },
@@ -258,6 +258,6 @@ const styles = StyleSheet.create({
   deleteText: {
     color: "white",
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: 20,
   },
 });
