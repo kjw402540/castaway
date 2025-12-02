@@ -1,3 +1,5 @@
+// src\screens\Profile\ProfilePage.js
+
 import React, { useState } from "react";
 import { View, TouchableOpacity, Text, StyleSheet, ScrollView, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -201,9 +203,8 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     paddingHorizontal: 24,
-    paddingTop: 10,
     // 👇 수정됨: 스크롤 영역 하단 여백을 늘려서 '로그아웃/회원탈퇴'가 위로 올라오도록 함
-    paddingBottom: 200,
+    // paddingBottom: 200,
   },
   header: {
     marginBottom: 20,
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: "#F3F4F6",
-    marginVertical: 15,
+    marginVertical: 12,
   },
   sectionLabel: {
     fontSize: 12,
@@ -231,7 +232,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 8,
-    paddingVertical: 10,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     marginBottom: 8,
   },
@@ -265,7 +266,7 @@ const styles = StyleSheet.create({
   timeButton: {
     backgroundColor: '#F3F4F6',
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     borderRadius: 6,
   },
   timeText: {
@@ -283,13 +284,13 @@ const styles = StyleSheet.create({
     borderTopColor: '#F3F4F6',
   },
   footerButton: {
-    padding: 10,
+    padding: 9,
   },
   verticalDivider: {
     width: 1,
     height: 14,
     backgroundColor: '#D1D5DB',
-    marginHorizontal: 15,
+    marginHorizontal: 14,
   },
   logoutText: {
     fontSize: 13,

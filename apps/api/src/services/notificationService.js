@@ -49,8 +49,8 @@ export const removeMany = (ids, userId) => {
   return prisma.notification.deleteMany({
     where:
       ids === "all"
-        ? { user_id: Number(userId) }
-        : { notify_id: { in: ids.map(Number) } },
+        ? { user_id: Number(userId) }                   // 🔥 유저 전체 삭제
+        : { notify_id: { in: ids.map((v) => Number(v)) } }, // 선택 삭제
   });
 };
 
