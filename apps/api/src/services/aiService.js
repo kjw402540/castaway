@@ -10,7 +10,7 @@ import path from "path";
 // 환경 변수 (8000번 포트 하나만 사용)
 // ⚠️ 실제 배포 시 EC2 2의 Private IP로 변경해야 합니다.
 //const AI_BASE_URL = "http://172.31.19.26:8000"; 
-const AI_BASE_URL = "http://127.0.0.1:8000";
+const AI_BASE_URL = process.env.AI_BASE_URL || "http://127.0.0.1:8000"; // 기본값(로컬)
 
 const LOCAL_BGM_DIR = path.join(process.cwd(), "local_bgm_files");
 
