@@ -17,14 +17,17 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
 } from "react-native-reanimated";
-import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons"; // 아이콘 통일
+import { FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { deleteDiary } from "../../services/diaryService";
 import WaveformPlayer from "./components/WaveformPlayer";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 
-// ✅ [수정] EmotionResultCard와 동일한 컬러/라벨 매핑
+// ⚠️ [필수 수정] 본인의 Node.js API 서버 주소로 변경하세요!
+// 에뮬레이터라면 'http://10.0.2.2:4000', 실기기라면 'http://192.168.x.x:4000'
+const API_BASE_URL = "http://192.168.0.12:4000"; 
+
 const EMOTIONS = {
   0: { label: "화남/혐오", icon: "emoticon-angry-outline", color: "#EF4444" },
   1: { label: "기쁨", icon: "emoticon-happy-outline", color: "#F59E0B" },
@@ -48,6 +51,9 @@ export default function DiaryViewModal({
   const [displayKeywords, setDisplayKeywords] = useState([]);
   const [displayEmotion, setDisplayEmotion] = useState(null);
   const [displaySummary, setDisplaySummary] = useState("");
+  
+  // 🎵 BGM URL 상태 추가
+  const [displayBgmUrl, setDisplayBgmUrl] = useState(null);
 
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.96);
@@ -65,29 +71,43 @@ export default function DiaryViewModal({
 
       setDiary(initialData);
 
-      // ✅ [핵심 수정] DB 구조(keyword_1, 2, 3)에 맞춰서 파싱
+      // ✅ 1. 감정 분석 결과 파싱
       const result = initialData.emotionResult;
-
       if (result) {
-        // 1. 감정 매핑
         const emoId = result.main_emotion; 
-        setDisplayEmotion(EMOTIONS[emoId] || EMOTIONS[2]); // 기본값 평온
+        setDisplayEmotion(EMOTIONS[emoId] || EMOTIONS[2]); 
 
-        // 2. 키워드 합치기 (null 값 제외)
         const kList = [
           result.keyword_1,
           result.keyword_2,
           result.keyword_3
-        ].filter((k) => k); // 값이 있는 것만 남김
+        ].filter((k) => k);
         setDisplayKeywords(kList);
 
-        // 3. 요약 텍스트
         setDisplaySummary(result.summary_text || "");
       } else {
-        // 분석 데이터 없음
         setDisplayEmotion(null);
         setDisplayKeywords([]);
         setDisplaySummary("");
+      }
+
+      // ✅ 2. BGM 데이터 파싱 및 URL 생성
+      // 백엔드에서 diary 조회 시 include: { BGM: true } (또는 bgm)이 되어있어야 데이터가 들어옵니다.
+      const bgmData = initialData.BGM || initialData.bgm; // Prisma 모델명 대소문자 확인
+
+      // 1:1 관계면 객체, 1:N이면 배열일 수 있으므로 처리
+      const bgmItem = Array.isArray(bgmData) ? bgmData[0] : bgmData;
+
+      if (bgmItem && bgmItem.bgm_url) {
+        // DB 저장 경로(예: /home/ubuntu/.../bgm_123.wav)에서 파일명만 추출
+        const filename = bgmItem.bgm_url.split('/').pop();
+        
+        // 다운로드 API URL 완성
+        const downloadUrl = `${API_BASE_URL}/api/bgm/download?filename=${filename}`;
+        setDisplayBgmUrl(downloadUrl);
+        console.log("🎵 BGM URL 설정됨:", downloadUrl);
+      } else {
+        setDisplayBgmUrl(null);
       }
 
     } else {
@@ -98,6 +118,7 @@ export default function DiaryViewModal({
       setDiary(null);
       setDisplayKeywords([]);
       setDisplayEmotion(null);
+      setDisplayBgmUrl(null); // 초기화
     }
   }, [visible, initialData]);
 
@@ -180,13 +201,24 @@ export default function DiaryViewModal({
                   </Text>
                 </View>
               ) : (
-                 // 분석 전이면 기존 오브제 아이콘 표시
                  diary?.object?.icon && (
                    <Image source={diary.object.icon} style={styles.objectIcon} resizeMode="contain" />
                  )
               )}
 
-              {/* 2. 키워드 표시 */}
+              {/* 🎵 2. 오늘의 BGM (BGM이 있을 때만 표시) */}
+              {displayBgmUrl && (
+                <View style={styles.bgmContainer}>
+                  <View style={styles.bgmLabelRow}>
+                    <MaterialCommunityIcons name="music-note" size={16} color="#6366F1" />
+                    <Text style={styles.bgmLabelText}>AI가 선물한 오늘의 무드</Text>
+                  </View>
+                  {/* 기존 WaveformPlayer 재사용 */}
+                  <WaveformPlayer audioUri={displayBgmUrl} />
+                </View>
+              )}
+
+              {/* 3. 키워드 표시 */}
               {displayKeywords.length > 0 && (
                 <View style={styles.keywordRow}>
                   {displayKeywords.map((k, idx) => (
@@ -197,20 +229,21 @@ export default function DiaryViewModal({
                 </View>
               )}
 
-              {/* 3. 요약(원인) 텍스트 */}
+              {/* 4. 요약(원인) 텍스트 */}
               {displaySummary ? (
                  <Text style={styles.summaryText}>"{displaySummary}"</Text>
               ) : null}
 
-              {/* 4. 오디오 플레이어 */}
+              {/* 5. 사용자 녹음 파일 (있으면 표시) */}
               {diary?.audio && (
-                <View style={{ marginTop: 10 }}>
+                <View style={{ marginTop: 10, width: '100%' }}>
+                  <Text style={styles.subLabel}>나의 목소리</Text>
                   <WaveformPlayer audioUri={diary.audio} />
                 </View>
               )}
             </View>
 
-            {/* 본문 내용 표시 (줄 구분선 추가) */}
+            {/* 본문 내용 표시 */}
             <View style={styles.divider} />
             
             <Text style={styles.body}>
@@ -269,26 +302,16 @@ const styles = StyleSheet.create({
     elevation: 20, 
     zIndex: 999,
   },
-  menuItem: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  menuText: {
-    fontSize: 14,
-    color: "#1E3A8A",
-    fontWeight: "600",
-  },
-  menuDelete: {
-    fontSize: 14,
-    color: "#DC2626",
-    fontWeight: "600",
-  },
+  menuItem: { paddingVertical: 12, paddingHorizontal: 16 },
+  menuText: { fontSize: 14, color: "#1E3A8A", fontWeight: "600" },
+  menuDelete: { fontSize: 14, color: "#DC2626", fontWeight: "600" },
 
   // 분석 패널 스타일
   analysisPanel: {
     alignItems: "center",
     marginTop: 6,
     marginBottom: 16,
+    width: '100%',
   },
   
   emotionBadge: {
@@ -305,8 +328,34 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-
   objectIcon: { width: 40, height: 40, marginBottom: 8 },
+
+  // 🎵 BGM 스타일 추가
+  bgmContainer: {
+    width: '100%',
+    backgroundColor: '#EEF2FF', // 연한 보라/블루 계열
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  bgmLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 4,
+  },
+  bgmLabelText: {
+    fontSize: 14,
+    color: '#6366F1',
+    fontWeight: '700',
+  },
+  subLabel: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    marginBottom: 4,
+    marginLeft: 4,
+  },
 
   keywordRow: { 
     flexDirection: "row", 
@@ -321,11 +370,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
   },
-  keywordText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#4B5563",
-  },
+  keywordText: { fontSize: 13, fontWeight: "600", color: "#4B5563" },
 
   summaryText: {
     fontSize: 14,
@@ -341,7 +386,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F3F4F6",
     marginBottom: 16,
   },
-
   body: {
     fontSize: 16,
     lineHeight: 26, 
