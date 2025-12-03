@@ -1,12 +1,10 @@
 // src/routes/bgmRoutes.js
 import express from "express";
 import * as bgmController from "../controllers/bgmController.js";
-import path from "path"; // 👈 경로 처리를 위해 추가
+import path from "path"; 
 
 const router = express.Router();
 
-// ⚠️ EC2 1에 BGM 파일이 저장되는 최종 경로 (FastAPI가 SFTP로 보내는 경로)
-// 이 경로는 실제 서버의 디렉토리 구조와 일치해야 합니다.
 const BGM_STORAGE_ROOT = "/home/ubuntu/apps/castaway_ai/generated_music";
 
 /* ----------------------------------------
@@ -23,16 +21,23 @@ router.get("/download", (req, res) => {
   // 1. 파일 경로 생성
   const filePath = path.join(BGM_STORAGE_ROOT, filename);
 
-  // 2. 보안 검증 (상위 디렉토리 접근 공격 방지)
+  // 2. 보안 검증
   const resolvedPath = path.resolve(filePath);
   if (!resolvedPath.startsWith(path.resolve(BGM_STORAGE_ROOT))) {
     console.error(`[Security Alert] Invalid path requested: ${filePath}`);
     return res.status(403).json({ error: "접근이 금지된 경로입니다." });
   }
 
-  // 3. 파일 전송
+  // 3. 파일 전송 (수정됨)
   res.sendFile(resolvedPath, (err) => {
     if (err) {
+      // ✅ [핵심] 이미 헤더가 전송되었다면(전송 중 끊김 등) 추가 응답을 보내지 않음
+      if (res.headersSent) {
+        console.warn(`⚠️ 전송 중 연결 끊김 (Code: ${err.code}): ${filename}`);
+        return; 
+      }
+
+      // 전송 시작 전 에러(파일 없음 등)인 경우에만 에러 응답 전송
       console.error(`❌ 파일 전송 실패: ${resolvedPath}`, err);
       res.status(404).json({ error: "BGM 파일을 찾을 수 없습니다." });
     } else {
