@@ -26,7 +26,7 @@ const SCREEN_HEIGHT = Dimensions.get("window").height;
 
 // ⚠️ [필수 수정] 본인의 Node.js API 서버 주소로 변경하세요!
 // 에뮬레이터라면 'http://10.0.2.2:4000', 실기기라면 'http://192.168.x.x:4000'
-const API_BASE_URL = "http://192.168.0.12:4000"; 
+const API_BASE_URL = "http://3.23.124.215:4000"; 
 
 const EMOTIONS = {
   0: { label: "화남/혐오", icon: "emoticon-angry-outline", color: "#EF4444" },
@@ -91,21 +91,19 @@ export default function DiaryViewModal({
         setDisplaySummary("");
       }
 
-      // ✅ 2. BGM 데이터 파싱 및 URL 생성
-      // 백엔드에서 diary 조회 시 include: { BGM: true } (또는 bgm)이 되어있어야 데이터가 들어옵니다.
-      const bgmData = initialData.BGM || initialData.bgm; // Prisma 모델명 대소문자 확인
+      // ✅ 2. BGM 데이터 파싱 (여기만 수정!)
+      // 백엔드가 'bgms'로 보내주고 있으니, 이걸 가장 먼저 체크해야 합니다!
+      const bgmData = initialData.bgms || initialData.BGM || initialData.bgm; 
 
-      // 1:1 관계면 객체, 1:N이면 배열일 수 있으므로 처리
+      // 1:N 관계라서 배열로 올 테니 첫 번째 걸 씁니다.
       const bgmItem = Array.isArray(bgmData) ? bgmData[0] : bgmData;
 
       if (bgmItem && bgmItem.bgm_url) {
-        // DB 저장 경로(예: /home/ubuntu/.../bgm_123.wav)에서 파일명만 추출
         const filename = bgmItem.bgm_url.split('/').pop();
-        
-        // 다운로드 API URL 완성
         const downloadUrl = `${API_BASE_URL}/api/bgm/download?filename=${filename}`;
+        
         setDisplayBgmUrl(downloadUrl);
-        console.log("🎵 BGM URL 설정됨:", downloadUrl);
+        console.log("🎵 BGM 발견! URL:", downloadUrl); // 로그로 확인해보세요
       } else {
         setDisplayBgmUrl(null);
       }

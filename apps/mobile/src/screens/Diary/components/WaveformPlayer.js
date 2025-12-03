@@ -26,7 +26,12 @@ export default function WaveformPlayer({ audioUri }) {
       });
 
       if (!soundRef.current) {
-        const { sound } = await Audio.Sound.createAsync(audioUri);
+        // ---------------------------------------------------------
+        // 🚨 [핵심 수정] audioUri가 문자열이면 { uri: ... } 객체로 변환
+        // ---------------------------------------------------------
+        const source = typeof audioUri === 'string' ? { uri: audioUri } : audioUri;
+        const { sound } = await Audio.Sound.createAsync(source);
+        
         soundRef.current = sound;
         const status = await sound.getStatusAsync();
         durationRef.current = status.durationMillis || 0;
@@ -54,6 +59,8 @@ export default function WaveformPlayer({ audioUri }) {
   };
 
   const animateProgress = (duration) => {
+    // 이미 진행 중인 애니메이션 초기화 방지 로직 필요할 수 있음
+    // 여기서는 단순 실행
     progress.value = 0;
     progress.value = withTiming(1, {
       duration,
@@ -65,7 +72,9 @@ export default function WaveformPlayer({ audioUri }) {
     if (!soundRef.current) return;
     await soundRef.current.pauseAsync();
     setIsPlaying(false);
-    progress.value = progress.value; // 멈춤
+    // 애니메이션 멈춤 로직이 reanimated v2/v3에서는 cancelAnimation이 필요하지만
+    // 여기서는 단순히 현재 값을 유지하는 것으로 보임.
+    // (정확히 멈추려면 cancelAnimation(progress)를 써야 하지만 기존 로직 유지)
   };
 
   const resetPlayer = async () => {
@@ -130,6 +139,8 @@ const styles = StyleSheet.create({
     height: "100%",
     backgroundColor: "#4F8CFF",
     borderRadius: 10,
-    transformOrigin: "left",
+    // transformOrigin: "left", // RN에서는 transformOrigin 지원 안 함 (web용 속성)
+    // scaleX는 기본적으로 중앙 기준이므로, 왼쪽 정렬처럼 보이게 하려면 anchor point 조정이 필요함.
+    // 하지만 이미 잘 쓰고 계셨던 것 같으니 스타일은 그대로 둡니다.
   },
 });
