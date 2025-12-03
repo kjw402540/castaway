@@ -8,26 +8,27 @@ datasource db {
 }
 
 model User {
-  user_id           Int                 @id @default(autoincrement())
-  nickname          String              @db.VarChar(50)
-  email             String              @unique @db.VarChar(100)
-  password_hash     String
-  cluster_id        Int?
-  created_date      DateTime            @default(now()) @db.Timestamp(6)
-  diary_reminder    DateTime?           @db.Time(6)
-  bgm_volume        Float               @default(0.5)
-  sfx_volume        Float               @default(0.5)
-  user_type         Int?
-  used_flag         Int                 @default(1)
-  kakao_id          String?             @db.VarChar(50)
-  bgms              BGM[]
-  diaries           Diary[]
-  EmotionPrediction EmotionPrediction[]
-  Mail              Mail[]
-  notifications     Notification[]
-  objects           Object[]
-  reports           Report[]
-  cluster           ClusterGroup?       @relation(fields: [cluster_id], references: [cluster_id], onDelete: Restrict)
+  user_id                                          Int                 @id @default(autoincrement())
+  nickname                                         String              @db.VarChar(50)
+  email                                            String              @unique @db.VarChar(100)
+  password_hash                                    String
+  cluster_id                                       Int?
+  created_date                                     DateTime            @default(now()) @db.Timestamp(6)
+  diary_reminder                                   DateTime?           @db.Time(6)
+  bgm_volume                                       Float               @default(0.5)
+  sfx_volume                                       Float               @default(0.5)
+  user_type                                        Int?
+  used_flag                                        Int                 @default(1)
+  kakao_id                                         String?             @db.VarChar(50)
+  bgms                                             BGM[]
+  diaries                                          Diary[]
+  EmotionPrediction                                EmotionPrediction[]
+  notifications                                    Notification[]
+  objects                                          Object[]
+  reports                                          Report[]
+  SharedObject_SharedObject_giver_user_idToUser    SharedObject[]      @relation("SharedObject_giver_user_idToUser")
+  SharedObject_SharedObject_receiver_user_idToUser SharedObject[]      @relation("SharedObject_receiver_user_idToUser")
+  cluster                                          ClusterGroup?       @relation(fields: [cluster_id], references: [cluster_id], onDelete: Restrict)
 }
 
 model Diary {
@@ -53,21 +54,24 @@ model ClusterGroup {
   user_count              Int                    @default(0)
   updated_at              DateTime               @default(now()) @db.Timestamp(6)
   description             String
+  SharedObject            SharedObject[]
   users                   User[]
 }
 
 model EmotionResult {
-  emotion_id   Int                    @id @default(autoincrement())
-  diary_id     Int                    @unique
-  summary_text String?
-  main_emotion Int?
-  keyword_1    String?                @db.VarChar(30)
-  keyword_2    String?                @db.VarChar(30)
-  keyword_3    String?                @db.VarChar(30)
-  embedding    Unsupported("vector")?
-  BGM          BGM[]
-  diary        Diary?
-  Object       Object[]
+  emotion_id      Int                    @id @default(autoincrement())
+  diary_id        Int                    @unique
+  summary_text    String?
+  main_emotion    Int?
+  keyword_1       String?                @db.VarChar(30)
+  keyword_2       String?                @db.VarChar(30)
+  keyword_3       String?                @db.VarChar(30)
+  embedding       Unsupported("vector")?
+  emotion_softmax Unsupported("vector")?
+  BGM             BGM[]
+  diary           Diary?
+  Object          Object[]
+  SharedObject    SharedObject[]
 }
 
 model Object {
@@ -81,6 +85,7 @@ model Object {
   Diary         Diary?         @relation(fields: [diary_id], references: [diary_id], onDelete: Cascade)
   EmotionResult EmotionResult? @relation(fields: [emotion_id], references: [emotion_id], onDelete: Restrict)
   user          User           @relation(fields: [user_id], references: [user_id])
+  SharedObject  SharedObject[]
 }
 
 model BGM {
@@ -128,12 +133,19 @@ model EmotionPrediction {
   User              User                   @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_user_id")
 }
 
-model Mail {
-  mail_id    Int       @id @default(autoincrement())
-  user_id    Int
-  title      String    @db.VarChar(100)
-  content    String
-  created_at DateTime? @default(now()) @db.Timestamp(6)
-  category   Int?      @default(0)
-  User       User      @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_mail_user")
+model SharedObject {
+  share_id                                 Int            @id @default(autoincrement())
+  giver_user_id                            Int
+  receiver_user_id                         Int
+  object_id                                Int
+  emotion_id                               Int?
+  share_type                               Int            @default(0)
+  cluster_id                               Int?
+  note                                     String?
+  created_date                             DateTime       @default(now()) @db.Timestamp(6)
+  ClusterGroup                             ClusterGroup?  @relation(fields: [cluster_id], references: [cluster_id], onUpdate: NoAction, map: "fk_cluster")
+  EmotionResult                            EmotionResult? @relation(fields: [emotion_id], references: [emotion_id], onUpdate: NoAction, map: "fk_emotion")
+  User_SharedObject_giver_user_idToUser    User           @relation("SharedObject_giver_user_idToUser", fields: [giver_user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_giver_user")
+  Object                                   Object         @relation(fields: [object_id], references: [object_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_object")
+  User_SharedObject_receiver_user_idToUser User           @relation("SharedObject_receiver_user_idToUser", fields: [receiver_user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_receiver_user")
 }
