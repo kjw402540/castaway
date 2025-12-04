@@ -6,11 +6,14 @@ import {
   ScrollView,
   FlatList,
   TouchableOpacity,
+  Image, // 👈 이미지 컴포넌트 추가
+  ActivityIndicator,
 } from "react-native";
 
 import {
   getAllObjects,
   deleteObject,
+  getObjectImageUrl, // 👈 URL 생성 함수 import
 } from "../../services/objectService";
 
 import DiaryViewModal from "../Diary/DiaryViewModal";
@@ -18,15 +21,24 @@ import ObjectDetailModal from "./ObjectDetailModal";
 import { useBackExit } from "../../hooks/useBackExit";
 import { useNavigation } from "@react-navigation/native";
 
+// 감정 ID를 텍스트로 변환하는 맵
+const EMOTION_MAP = {
+  0: "Anger & Disgust", // 분노/혐오
+  1: "Joy & Happiness", // 기쁨
+  2: "Neutral",         // 중립
+  3: "Sadness",         // 슬픔
+  4: "Surprise & Fear", // 놀람/공포
+};
+
 export default function ObjectsPage() {
   const [groups, setGroups] = useState({});
-  const [flatList, setFlatList] = useState([]);
+  const [flatList, setFlatList] = useState([]); // 전체 리스트 (앞뒤 이동용)
   const [selectedItem, setSelectedItem] = useState(null);
   const [diaryModalVisible, setDiaryModalVisible] = useState(false);
   const [diaryDate, setDiaryDate] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const navigation = useNavigation();
-
   useBackExit();
 
   useEffect(() => {
@@ -34,27 +46,45 @@ export default function ObjectsPage() {
   }, []);
 
   const loadObjects = async () => {
-    const list = await getAllObjects();
+    setLoading(true);
+    const data = await getAllObjects();
+    
+    // 1. 데이터 가공 (DB 포맷 -> UI 포맷)
+    const processedList = data.map((item) => {
+        // item.emotion이 없을 수도 있으므로 안전하게 처리
+        const emotionCode = item.emotion ? item.emotion.main_emotion : 2; 
+        const emotionLabel = EMOTION_MAP[emotionCode] || "Unknown";
+        
+        return {
+            id: item.object_id,
+            date: item.created_date.split('T')[0], // YYYY-MM-DD
+            imageUrl: getObjectImageUrl(item.object_image), // 이미지 URL 생성
+            emotion: emotionLabel,
+            rawItem: item, // 원본 데이터 보존
+        };
+    });
 
-    setFlatList(list);
+    setFlatList(processedList);
 
+    // 2. 감정별 그룹화
     const grouped = {};
-    list.forEach((item) => {
+    processedList.forEach((item) => {
       if (!grouped[item.emotion]) grouped[item.emotion] = [];
       grouped[item.emotion].push(item);
     });
 
     setGroups(grouped);
+    setLoading(false);
   };
 
-  // 이전
+  // 이전 오브제 보기
   const handlePrev = () => {
     if (!selectedItem) return;
     const idx = flatList.findIndex((i) => i.id === selectedItem.id);
     if (idx > 0) setSelectedItem(flatList[idx - 1]);
   };
 
-  // 다음
+  // 다음 오브제 보기
   const handleNext = () => {
     if (!selectedItem) return;
     const idx = flatList.findIndex((i) => i.id === selectedItem.id);
@@ -64,33 +94,44 @@ export default function ObjectsPage() {
   // 삭제
   const handleDelete = async (id) => {
     await deleteObject(id);
-    await loadObjects();
+    await loadObjects(); // 목록 새로고침
     setSelectedItem(null);
   };
 
-  // 일기 이동 -> 일기 모달 바로 띄우기
   const handleOpenDiary = (date) => {
-    setSelectedItem(null);        
-    setDiaryDate(date);           
-    setDiaryModalVisible(true);   
+    setSelectedItem(null);
+    setDiaryDate(date);
+    setDiaryModalVisible(true);
   };
 
-  // 섬 배치 (나중에 구현)
   const handlePlace = () => {
     console.log("섬 배치 기능은 추후 구현");
   };
 
+  // 카드 렌더링 (이미지 표시)
   const renderCard = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.9}
       onPress={() => setSelectedItem(item)}
     >
-      <Text style={styles.emoji}>{item.emoji}</Text>
+      <View style={styles.imageContainer}>
+          {item.imageUrl ? (
+              <Image 
+                source={{ uri: item.imageUrl }} 
+                style={styles.objectImage} 
+                resizeMode="cover"
+              />
+          ) : (
+              <Text style={styles.noImageText}>No Image</Text>
+          )}
+      </View>
+      
       <Text style={styles.date}>{item.date}</Text>
 
+      {/* 재생 버튼 아이콘 (오브제 느낌을 위해 유지하거나 제거 가능) */}
       <View style={styles.playButton}>
-        <Text style={styles.playIcon}>▶</Text>
+        <Text style={styles.playIcon}>●</Text> 
       </View>
     </TouchableOpacity>
   );
@@ -100,7 +141,9 @@ export default function ObjectsPage() {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 120 }}
     >
-      {Object.entries(groups).map(([emotion, items]) => (
+      {loading && <ActivityIndicator size="large" color="#0B2A40" style={{marginTop: 20}} />}
+
+      {!loading && Object.entries(groups).map(([emotion, items]) => (
         <View key={emotion} style={styles.section}>
           <Text style={styles.sectionTitle}>
             {emotion} <Text style={styles.count}>{items.length}</Text>
@@ -117,25 +160,25 @@ export default function ObjectsPage() {
         </View>
       ))}
 
+      {/* 상세 모달 */}
       {selectedItem && (
         <ObjectDetailModal
           visible={true}
-          object={selectedItem}
+          object={selectedItem} // 상세 모달에서도 imageUrl 사용 가능
           onClose={() => setSelectedItem(null)}
           onPrev={handlePrev}
           onNext={handleNext}
           onOpenDiary={() => handleOpenDiary(selectedItem.date)}
           onPlace={handlePlace}
-          onSaveAudio={() => {}}
           onDeleteRequest={() => handleDelete(selectedItem.id)}
         />
       )}
 
-    <DiaryViewModal
-      visible={diaryModalVisible}
-      dateString={diaryDate}              
-      onClose={() => setDiaryModalVisible(false)}
-      onEdit={undefined}                   
+      {/* 일기 모달 */}
+      <DiaryViewModal
+        visible={diaryModalVisible}
+        dateString={diaryDate}
+        onClose={() => setDiaryModalVisible(false)}
       />
     </ScrollView>
   );
@@ -148,61 +191,62 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 24,
   },
-
   section: {
     marginBottom: 30,
   },
-
   sectionTitle: {
     fontSize: 20,
     fontWeight: "700",
     color: "#0B2A40",
     marginBottom: 12,
   },
-
   count: {
     fontSize: 16,
     color: "#4A5B6C",
   },
-
   card: {
     width: 120,
-    height: 130,
-    borderRadius: 22,
+    height: 150, // 이미지 때문에 높이 약간 증가
+    borderRadius: 16,
     backgroundColor: "#FFFFFF",
     marginRight: 14,
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 14,
+    padding: 10,
     shadowColor: "#000",
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
-
-  emoji: {
-    fontSize: 36,
-    marginTop: 2,
+  imageContainer: {
+      width: 100,
+      height: 100,
+      borderRadius: 10,
+      overflow: 'hidden',
+      backgroundColor: '#f0f0f0',
+      alignItems: 'center',
+      justifyContent: 'center',
   },
-
+  objectImage: {
+      width: '100%',
+      height: '100%',
+  },
+  noImageText: {
+      color: '#ccc',
+      fontSize: 12,
+  },
   date: {
-    fontSize: 11,
-    color: "#8A8F99",
-    marginTop: 2,
+    fontSize: 12,
+    color: "#555",
+    marginTop: 6,
+    fontWeight: "600",
   },
-
   playButton: {
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  playIcon: {
-    color: "#0C2F55",
-    fontSize: 14,
-    fontWeight: "900",
     marginTop: 2,
+  },
+  playIcon: {
+    color: "#A7D8FF",
+    fontSize: 10,
   },
 });
