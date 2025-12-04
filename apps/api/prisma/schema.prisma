@@ -43,7 +43,7 @@ model Diary {
   bgms          BGM[]
   emotionResult EmotionResult? @relation(fields: [emotion_id], references: [emotion_id], onDelete: Restrict)
   user          User           @relation(fields: [user_id], references: [user_id])
-  Object        Object?
+  object        Object?
 }
 
 model ClusterGroup {
