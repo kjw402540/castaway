@@ -1,3 +1,5 @@
+// apps/mobile/src/screens/Object/ObjectDetailModal.js
+
 import React, { useRef } from "react";
 import {
   View,
@@ -6,6 +8,7 @@ import {
   TouchableOpacity,
   Modal,
   Pressable,
+  Image, // 👈 Image 컴포넌트 추가 확인!
 } from "react-native";
 import { PanGestureHandler } from "react-native-gesture-handler";
 import ViewShot from "react-native-view-shot";
@@ -48,34 +51,42 @@ export default function ObjectDetailModal({
       <View style={styles.sheet}>
         {/* 닫기 */}
         <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
-          <Text style={{ fontSize: 26 }}>✕</Text>
+          <Text style={{ fontSize: 26, color: "#555" }}>✕</Text>
         </TouchableOpacity>
 
         <PanGestureHandler onGestureEvent={onSwipe}>
           <View style={{ alignItems: "center", width: "100%" }}>
             {/* 날짜 + 좌우 이동 */}
             <View style={styles.dateRow}>
-              <TouchableOpacity onPress={onPrev}>
+              <TouchableOpacity onPress={onPrev} style={{ padding: 10 }}>
                 <Text style={styles.arrow}>◀</Text>
               </TouchableOpacity>
 
               <Text style={styles.date}>{object.date}</Text>
 
-              <TouchableOpacity onPress={onNext}>
+              <TouchableOpacity onPress={onNext} style={{ padding: 10 }}>
                 <Text style={styles.arrow}>▶</Text>
               </TouchableOpacity>
             </View>
 
-            {/* 오브제 */}
-            <ViewShot ref={captureRef}>
+            {/* ▼▼▼ [수정됨] 이미지가 있으면 이미지, 없으면 이모지 ▼▼▼ */}
+            <ViewShot ref={captureRef} options={{ format: "png", quality: 0.9 }}>
               <View style={styles.circle}>
-                <Text style={styles.emoji}>{object.emoji}</Text>
+                {object.imageUrl ? (
+                   <Image 
+                     source={{ uri: object.imageUrl }} 
+                     style={styles.objectImage} 
+                     resizeMode="cover"
+                   />
+                ) : (
+                   <Text style={styles.emoji}>{object.emoji || "?"}</Text>
+                )}
               </View>
             </ViewShot>
 
-            {/* 재생 버튼 (더 작게) */}
+            {/* 재생 버튼 */}
             <TouchableOpacity style={styles.playBtn}>
-              <Text style={styles.playIcon}>▶</Text>
+              <Text style={styles.playIcon}>●</Text>
             </TouchableOpacity>
           </View>
         </PanGestureHandler>
@@ -112,13 +123,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.35)",
   },
-
   sheet: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    height: "78%",
+    height: "82%",
     backgroundColor: "#F9FAFB",
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
@@ -126,36 +136,31 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     alignItems: "center",
   },
-
   closeBtn: {
     position: "absolute",
     top: 20,
     right: 20,
+    zIndex: 10,
   },
-
   dateRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 14,
+    marginBottom: 20,
   },
-
   arrow: {
     fontSize: 20,
     color: "#374151",
-    padding: 12,
   },
-
   date: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "700",
     color: "#111827",
-    marginHorizontal: 10,
+    marginHorizontal: 16,
   },
-
   circle: {
-    width: 240,
-    height: 240,
-    borderRadius: 999,
+    width: 260,
+    height: 260,
+    borderRadius: 20, // 사진이 잘 보이게 둥근 사각형 추천
     backgroundColor: "white",
     justifyContent: "center",
     alignItems: "center",
@@ -163,56 +168,53 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
-    marginTop: 10,
-    marginBottom: 16,
+    marginBottom: 20,
+    overflow: 'hidden',
   },
-
+  objectImage: {
+    width: '100%',
+    height: '100%',
+  },
   emoji: {
-    fontSize: 140,
+    fontSize: 100,
   },
-
   playBtn: {
     padding: 6,
+    marginBottom: 10,
   },
-
   playIcon: {
-    fontSize: 30,
+    fontSize: 24,
     color: "#0F172A",
   },
-
   grid: {
-    marginTop: 12,
+    marginTop: 10,
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
     width: "100%",
   },
-
   btn: {
     width: "48%",
     backgroundColor: "#0F172A",
-    paddingVertical: 13,
-    borderRadius: 12,
+    paddingVertical: 14,
+    borderRadius: 14,
     alignItems: "center",
     marginBottom: 12,
   },
-
   btnText: {
     color: "#fff",
     fontSize: 14,
     fontWeight: "600",
   },
-
   deleteBtn: {
     width: "100%",
     borderWidth: 1.4,
     borderColor: "#DC2626",
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: "center",
     marginTop: 4,
   },
-
   deleteText: {
     color: "#DC2626",
     fontSize: 15,

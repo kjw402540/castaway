@@ -7,7 +7,9 @@ import * as diaryService from "../services/diaryService.js";
 ----------------------------------------- */
 export const getAll = async (req, res, next) => {
   try {
-    const userId = 1;
+    // ⚠️ 미들웨어(authMiddleware.js)가 'id'로 저장하므로 .id로 접근해야 함!
+    const userId = req.user.id; 
+    
     const list = await objectService.getAll(userId);
     res.json(list);
   } catch (err) {
@@ -16,12 +18,13 @@ export const getAll = async (req, res, next) => {
 };
 
 /* ----------------------------------------
-   날짜별 오브제 (GET /object/:date)
+   날짜별 오브제
 ----------------------------------------- */
 export const getByDate = async (req, res, next) => {
   try {
-    const userId = 1;
+    const userId = req.user.id; // 여기도 수정
     const { date } = req.params;
+    
     const object = await objectService.getByDate(userId, date);
     res.json(object);
   } catch (err) {
@@ -43,18 +46,22 @@ export const getById = async (req, res, next) => {
 };
 
 /* ----------------------------------------
-   오브제 삭제 = 일기 세트 삭제
+   오브제 삭제
 ----------------------------------------- */
 export const remove = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const userId = req.user.id; // 삭제 권한 확인용 (필요시 사용)
 
     const obj = await objectService.getById(id);
     if (!obj) return res.status(404).json({ error: "Not found" });
 
-    const diaryId = obj.diary_id;
+    // (옵션) 본인 것인지 확인
+    if (obj.user_id !== userId) {
+        return res.status(403).json({ error: "권한이 없습니다." });
+    }
 
-    // ✔ diaryService.removeById 사용
+    const diaryId = obj.diary_id;
     const removed = await diaryService.removeById(diaryId);
 
     res.json({ ok: true, removed });
@@ -64,7 +71,7 @@ export const remove = async (req, res, next) => {
 };
 
 /* ----------------------------------------
-   오브제 배치 (위치 저장 placeholder)
+   오브제 배치
 ----------------------------------------- */
 export const place = async (req, res, next) => {
   try {
