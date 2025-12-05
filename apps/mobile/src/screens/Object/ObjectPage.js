@@ -1,3 +1,5 @@
+// src/pages/Main/ObjectsPage.js
+
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -6,14 +8,14 @@ import {
   ScrollView,
   FlatList,
   TouchableOpacity,
-  Image, // 👈 이미지 컴포넌트 추가
+  Image,
   ActivityIndicator,
 } from "react-native";
 
 import {
   getAllObjects,
   deleteObject,
-  getObjectImageUrl, // 👈 URL 생성 함수 import
+  getObjectImageUrl,
 } from "../../services/objectService";
 
 import DiaryViewModal from "../Diary/DiaryViewModal";
@@ -31,14 +33,25 @@ const EMOTION_MAP = {
   4: "Surprise & Fear", // 놀람/공포
 };
 
+// ▼ [추가] UTC 시간을 한국 시간(KST) 날짜 문자열(YYYY-MM-DD)로 변환하는 함수
+const getKSTDateString = (isoString) => {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function ObjectsPage() {
   const [groups, setGroups] = useState({});
-  const [flatList, setFlatList] = useState([]); // 전체 리스트 (앞뒤 이동용)
+  const [flatList, setFlatList] = useState([]);
   const [selectedItem, setSelectedItem] = useState(null);
   const [diaryModalVisible, setDiaryModalVisible] = useState(false);
   const [diaryDate, setDiaryDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [currentDiary, setCurrentDiary] = useState(null);
+  
   const navigation = useNavigation();
   useBackExit();
 
@@ -52,16 +65,21 @@ export default function ObjectsPage() {
     
     // 1. 데이터 가공 (DB 포맷 -> UI 포맷)
     const processedList = data.map((item) => {
-        // item.emotion이 없을 수도 있으므로 안전하게 처리
         const emotionCode = item.emotion ? item.emotion.main_emotion : 2; 
         const emotionLabel = EMOTION_MAP[emotionCode] || "Unknown";
         
+        // ▼▼▼ [수정] 날짜 로직 개선 ▼▼▼
+        // 1. 일기(diary) 정보가 있으면 그 날짜를 우선 사용
+        // 2. KST 변환 함수를 거쳐서 "어제 날짜"로 나오는 문제 해결
+        const targetDateStr = item.diary ? item.diary.created_date : item.created_date;
+        const displayDate = getKSTDateString(targetDateStr);
+
         return {
             id: item.object_id,
-            date: item.created_date.split('T')[0], // YYYY-MM-DD
-            imageUrl: getObjectImageUrl(item.object_image), // 이미지 URL 생성
+            date: displayDate, // 수정된 날짜 적용
+            imageUrl: getObjectImageUrl(item.object_image),
             emotion: emotionLabel,
-            rawItem: item, // 원본 데이터 보존
+            rawItem: item, 
         };
     });
 
@@ -95,18 +113,22 @@ export default function ObjectsPage() {
   // 삭제
   const handleDelete = async (id) => {
     await deleteObject(id);
-    await loadObjects(); // 목록 새로고침
+    await loadObjects(); 
     setSelectedItem(null);
   };
 
+  // 일기 조회 핸들러
   const handleOpenDiary = async (date) => {
     try {
-      // 1. 오브제 상세 모달 닫기 (애니메이션 시작)
+      // 1. 오브제 상세 모달 닫기
       setSelectedItem(null);
       setLoading(true);
+
+      // 2. [병렬 실행] API 요청 + 최소 딜레이
+      // 300ms -> 100ms로 단축 (훨씬 빨라짐)
       const [diaryData] = await Promise.all([
-        getDiaryByDate(date),                    // API 요청
-        new Promise(resolve => setTimeout(resolve, 300)) // 애니메이션 안전 시간 (300ms)
+        getDiaryByDate(date),
+        new Promise(resolve => setTimeout(resolve, 100)) 
       ]);
 
       // 3. 데이터 세팅 및 모달 오픈
@@ -125,7 +147,6 @@ export default function ObjectsPage() {
     console.log("섬 배치 기능은 추후 구현");
   };
 
-  // 카드 렌더링 (이미지 표시)
   const renderCard = ({ item }) => (
     <TouchableOpacity
       style={styles.card}
@@ -146,7 +167,6 @@ export default function ObjectsPage() {
       
       <Text style={styles.date}>{item.date}</Text>
 
-      {/* 재생 버튼 아이콘 (오브제 느낌을 위해 유지하거나 제거 가능) */}
       <View style={styles.playButton}>
         <Text style={styles.playIcon}>●</Text> 
       </View>
@@ -177,11 +197,11 @@ export default function ObjectsPage() {
         </View>
       ))}
 
-      {/* 상세 모달 */}
+      {/* 오브제 상세 모달 */}
       {selectedItem && (
         <ObjectDetailModal
           visible={true}
-          object={selectedItem} // 상세 모달에서도 imageUrl 사용 가능
+          object={selectedItem}
           onClose={() => setSelectedItem(null)}
           onPrev={handlePrev}
           onNext={handleNext}
@@ -224,7 +244,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: 120,
-    height: 150, // 이미지 때문에 높이 약간 증가
+    height: 150,
     borderRadius: 16,
     backgroundColor: "#FFFFFF",
     marginRight: 14,
