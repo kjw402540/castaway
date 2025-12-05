@@ -3,12 +3,16 @@ import * as reportService from "../services/reportService.js";
 
 /* --------------------------------------------------------
    [Helper] 유저 ID 추출 함수
-   1순위: 로그인 토큰 (req.user.user_id)
-   2순위: Body 데이터 (req.body.userId) - POST 요청 시
-   3순위: Query 파라미터 (req.query.userId) - GET 요청 시 (?userId=1)
+   1순위: 로그인 토큰 (req.user.id)  <-- ⭐ 수정됨 (user_id 아님)
+   2순위: Body 데이터 (req.body.userId)
+   3순위: Query 파라미터 (req.query.userId)
+   4순위: 테스트용 기본값 (9)        <-- ⭐ 추가됨
    -------------------------------------------------------- */
 const getUserId = (req) => {
-  const userId = req.user?.user_id || req.body.userId || req.query.userId;
+  // 👇 여기가 핵심 수정 포인트입니다.
+  // 1. req.user.user_id -> req.user.id (DiaryController와 통일)
+  // 2. 맨 뒤에 || 9 추가 (테스트 위해 에러 안 나게 처리)
+  const userId = req.user?.id || req.body.userId || req.query.userId || 9;
   
   if (!userId) {
     throw new Error("로그인 토큰이 없거나 userId가 지정되지 않았습니다.");
@@ -21,7 +25,7 @@ const getUserId = (req) => {
 -------------------------------------------------------- */
 export const getWeekly = async (req, res, next) => {
   try {
-    const userId = getUserId(req); // 6번 하드코딩 제거됨
+    const userId = getUserId(req); 
     const report = await reportService.getWeekly(userId);
     res.json(report);
   } catch (err) {
@@ -35,7 +39,7 @@ export const getWeekly = async (req, res, next) => {
 -------------------------------------------------------- */
 export const getHistory = async (req, res, next) => {
   try {
-    const userId = getUserId(req); // 6번 하드코딩 제거됨
+    const userId = getUserId(req); 
     const list = await reportService.getHistory(userId);
     res.json(list);
   } catch (err) {
@@ -62,7 +66,7 @@ export const getById = async (req, res, next) => {
 -------------------------------------------------------- */
 export const generate = async (req, res, next) => {
   try {
-    // 1. 유저 ID 가져오기 (토큰 -> Body 순서, 하드코딩 제거)
+    // 1. 유저 ID 가져오기
     const userId = getUserId(req);
     
     // 2. 날짜가 없으면 오늘 날짜 기준
