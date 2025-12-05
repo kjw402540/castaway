@@ -1,4 +1,4 @@
-// apps/api/src/services/objectService.js
+// src/services/objectService.js
 import prisma from "../lib/prisma.js";
 import { toKST } from "../utils/date.js";
 
@@ -11,20 +11,23 @@ export const getByDate = async (userId, ymd) => {
   const obj = await prisma.object.findFirst({
     where: {
       user_id: userId,
+      // ▼ [수정] 연결된 다이어리가 '삭제되지 않은(flag=1)' 상태여야 함
+      Diary: {
+        flag: 1, 
+      },
       created_date: {
         gte: target,
         lt: new Date(target.getTime() + 24 * 60 * 60 * 1000),
       },
     },
     include: {
-      EmotionResult: true, // ⚠️ 스키마에 정의된 이름 (대문자)
-      Diary: true,         // ⚠️ 스키마에 정의된 이름 (대문자 Diary)
+      EmotionResult: true, 
+      Diary: true,         
     },
   });
 
   if (!obj) return null;
 
-  // 프론트엔드 호환성을 위해 이름 매핑 (EmotionResult -> emotion)
   return {
     ...obj,
     emotion: obj.EmotionResult,
@@ -33,22 +36,27 @@ export const getByDate = async (userId, ymd) => {
 };
 
 /* ----------------------------------------
-   전체 조회 (여기가 가장 중요!)
+   전체 조회 (여기가 오브제 화면 목록)
 ----------------------------------------- */
 export const getAll = async (userId) => {
   const objects = await prisma.object.findMany({
-    where: { user_id: userId },
+    where: { 
+      user_id: userId,
+      // ▼ [수정] 여기서도 Diary의 flag가 1인 것만 필터링!
+      Diary: {
+        flag: 1,
+      }
+    },
     orderBy: { created_date: "desc" },
     include: {
-      EmotionResult: true, // ✅ 이게 있어야 프론트에서 그룹핑 가능
+      EmotionResult: true, 
       Diary: true,
     },
   });
 
-  // 프론트엔드는 'item.emotion'을 찾으므로 키 이름을 변경해서 리턴
   return objects.map((obj) => ({
     ...obj,
-    emotion: obj.EmotionResult, // 대문자 결과를 소문자 키에 할당
+    emotion: obj.EmotionResult, 
     diary: obj.Diary
   }));
 };
@@ -66,6 +74,9 @@ export const getById = async (id) => {
   });
 
   if (!obj) return null;
+  
+  // (선택사항) 단일 조회 시에도 삭제된 건 안 보여주려면 아래 로직 추가
+  // if (obj.Diary && obj.Diary.flag === 0) return null;
 
   return {
     ...obj,

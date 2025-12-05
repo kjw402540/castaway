@@ -20,6 +20,7 @@ import DiaryViewModal from "../Diary/DiaryViewModal";
 import ObjectDetailModal from "./ObjectDetailModal";
 import { useBackExit } from "../../hooks/useBackExit";
 import { useNavigation } from "@react-navigation/native";
+import { getDiaryByDate } from "../../services/diaryService";
 
 // 감정 ID를 텍스트로 변환하는 맵
 const EMOTION_MAP = {
@@ -37,7 +38,7 @@ export default function ObjectsPage() {
   const [diaryModalVisible, setDiaryModalVisible] = useState(false);
   const [diaryDate, setDiaryDate] = useState(null);
   const [loading, setLoading] = useState(false);
-
+  const [currentDiary, setCurrentDiary] = useState(null);
   const navigation = useNavigation();
   useBackExit();
 
@@ -98,10 +99,26 @@ export default function ObjectsPage() {
     setSelectedItem(null);
   };
 
-  const handleOpenDiary = (date) => {
-    setSelectedItem(null);
-    setDiaryDate(date);
-    setDiaryModalVisible(true);
+  const handleOpenDiary = async (date) => {
+    try {
+      // 1. 오브제 상세 모달 닫기 (애니메이션 시작)
+      setSelectedItem(null);
+      setLoading(true);
+      const [diaryData] = await Promise.all([
+        getDiaryByDate(date),                    // API 요청
+        new Promise(resolve => setTimeout(resolve, 300)) // 애니메이션 안전 시간 (300ms)
+      ]);
+
+      // 3. 데이터 세팅 및 모달 오픈
+      setCurrentDiary(diaryData);
+      setDiaryDate(date);
+      setDiaryModalVisible(true);
+
+    } catch (error) {
+      console.error("일기 불러오기 실패:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePlace = () => {
@@ -179,6 +196,7 @@ export default function ObjectsPage() {
         visible={diaryModalVisible}
         dateString={diaryDate}
         onClose={() => setDiaryModalVisible(false)}
+        initialData={currentDiary}
       />
     </ScrollView>
   );
