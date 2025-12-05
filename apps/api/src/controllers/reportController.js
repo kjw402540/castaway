@@ -2,11 +2,26 @@
 import * as reportService from "../services/reportService.js";
 
 /* --------------------------------------------------------
+   [Helper] 유저 ID 추출 함수
+   1순위: 로그인 토큰 (req.user.user_id)
+   2순위: Body 데이터 (req.body.userId) - POST 요청 시
+   3순위: Query 파라미터 (req.query.userId) - GET 요청 시 (?userId=1)
+   -------------------------------------------------------- */
+const getUserId = (req) => {
+  const userId = req.user?.user_id || req.body.userId || req.query.userId;
+  
+  if (!userId) {
+    throw new Error("로그인 토큰이 없거나 userId가 지정되지 않았습니다.");
+  }
+  return Number(userId); // 숫자로 변환
+};
+
+/* --------------------------------------------------------
    이번 주 리포트 조회 (GET)
 -------------------------------------------------------- */
 export const getWeekly = async (req, res, next) => {
   try {
-    const userId = req.user?.user_id || 6; 
+    const userId = getUserId(req); // 6번 하드코딩 제거됨
     const report = await reportService.getWeekly(userId);
     res.json(report);
   } catch (err) {
@@ -20,8 +35,7 @@ export const getWeekly = async (req, res, next) => {
 -------------------------------------------------------- */
 export const getHistory = async (req, res, next) => {
   try {
-    const userId = req.user?.user_id || 6;
-
+    const userId = getUserId(req); // 6번 하드코딩 제거됨
     const list = await reportService.getHistory(userId);
     res.json(list);
   } catch (err) {
@@ -34,7 +48,7 @@ export const getHistory = async (req, res, next) => {
 -------------------------------------------------------- */
 export const getById = async (req, res, next) => {
   try {
-    // 단일 조회는 report_id만 있으면 되니까 user_id는 검증용으로만 필요하거나 안 써도 됨
+    // 단일 조회는 report_id가 기준이므로 userId 검증 불필요
     const report = await reportService.getById(req.params.id);
     res.json(report);
   } catch (err) {
@@ -44,12 +58,12 @@ export const getById = async (req, res, next) => {
 
 /* --------------------------------------------------------
    ★ 리포트 생성 요청 (POST)
-   - Body: { "date": "2025-11-24" }
+   - Body 예시: { "userId": 10, "date": "2025-11-24" }
 -------------------------------------------------------- */
 export const generate = async (req, res, next) => {
   try {
-    // 1. 로그인한 유저 ID 가져오기 (없으면 6번)
-    const userId = req.user?.user_id || 6;
+    // 1. 유저 ID 가져오기 (토큰 -> Body 순서, 하드코딩 제거)
+    const userId = getUserId(req);
     
     // 2. 날짜가 없으면 오늘 날짜 기준
     const targetDate = req.body.date || new Date().toISOString();
