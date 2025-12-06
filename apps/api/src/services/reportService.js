@@ -194,7 +194,7 @@ const callAiAnalysisServer = async (logs) => {
     console.log(`[AI Request] Python 서버로 ${formattedLogs.length}건 분석 요청...`);
 
     // 2. Python 서버 호출
-    const response = await fetch('http://127.0.0.1:8000/analyze/weekly', {
+    const response = await fetch('http://172.31.19.26:8000/analyze/weekly', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
