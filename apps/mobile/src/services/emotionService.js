@@ -40,3 +40,36 @@ export const analyzeEmotion = async (text) => {
     return "Neutral";
   }
 };
+
+// ----------------------------------------------------------------
+// 2. [NEW] 오늘의 감정 예측 조회 (추가된 부분)
+// ----------------------------------------------------------------
+export const getTodayPrediction = async () => {
+  if (USE_API) {
+    try {
+      // API 호출
+      const response = await emotionApi.getToday();
+      
+      // axios인 경우 data를 벗겨내고, fetch인 경우 그대로 사용 (프로젝트 환경에 맞춤)
+      const data = response?.data ?? response;
+      
+      // 데이터가 있고 exists: true 일 때만 반환
+      if (data && data.exists) {
+        return data; 
+      }
+      return null;
+    } catch (err) {
+      console.error("❌ emotionService - 예측 데이터 조회 실패:", err);
+      return null;
+    }
+  } else {
+    // Mock 데이터 사용 (테스트용)
+    // emotionMock.getToday()가 없다면 아래 객체 바로 리턴
+    return {
+      exists: true,
+      emotion_id: 2,
+      text: "평온/무난 (Mock)",
+      created_at: new Date().toISOString()
+    };
+  }
+};

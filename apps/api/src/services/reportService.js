@@ -69,18 +69,21 @@ export const generateWeekly = async (userId, targetDate) => {
   endObj.setDate(startObj.getDate() + 6); // 일요일
 
   // 2. YYYY-MM-DD 문자열 확보
-  const startStr = getFormatDate(startObj); // 예: "2025-11-24"
-  const endStr = getFormatDate(endObj);     // 예: "2025-11-30"
+  const startStr = getFormatDate(startObj); 
+  const endStr = getFormatDate(endObj);    
 
-  // 3. ✅ [만능 해결책] ISO 문자열에 '+09:00'을 붙여서 절대 시간 생성
-  // 로컬 컴퓨터가 KST든 UTC든 상관없이, 무조건 "한국 시간 00시"를 가리키는 UTC 시간을 만듭니다.
+  // 3. ISO 문자열에 '+09:00'을 붙여서 절대 시간 생성 (이번 주)
   const queryStart = new Date(`${startStr}T00:00:00+09:00`);
   const queryEnd = new Date(`${endStr}T23:59:59.999+09:00`);
 
-  console.log(`[Report] KST 기준 검색 범위: ${startStr} ~ ${endStr}`);
-  // console.log(`[Report] 실제 DB 쿼리(UTC): ${queryStart.toISOString()} ~ ${queryEnd.toISOString()}`);
+  // ✅ [추가] 지난주 쿼리 범위 계산 (딱 7일 뺌)
+  const lastStart = new Date(queryStart.getTime() - (7 * 24 * 60 * 60 * 1000));
+  const lastEnd = new Date(queryEnd.getTime() - (7 * 24 * 60 * 60 * 1000));
+  
+  console.log(`[Report] 이번 주: ${startStr} ~ ${endStr}`);
+  // console.log(`[Report] 지난 주: ${getFormatDate(lastStart)} ~ ${getFormatDate(lastEnd)}`);
 
-  // 4. DB 조회
+  // 4. DB 조회 (이번 주)
   const weeklyLogs = await prisma.emotionResult.findMany({
     where: {
       diary: {
@@ -101,19 +104,30 @@ export const generateWeekly = async (userId, targetDate) => {
     },
   });
 
+  // ✅ [추가] DB 조회 (지난 주) - 비교 분석용
+  const lastWeekLogs = await prisma.emotionResult.findMany({
+    where: {
+      diary: {
+        user_id: Number(userId),
+        created_date: {
+          gte: lastStart,
+          lte: lastEnd,
+        },
+        flag: 1, 
+      },
+    },
+    select: { main_emotion: true },
+  });
+
   // 5. 빈 날짜 채우기 (월~일)
   const dailyHistory = [];
   const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
 
   for (let i = 0; i < 7; i++) {
-    // queryStart(월요일 00:00 KST) 기준으로 하루씩 더함
     const d = new Date(queryStart.getTime() + (i * 24 * 60 * 60 * 1000));
-    
-    // 비교할 때 무조건 toLocalYMD(한국날짜)로 변환해서 비교
     const targetYMD = toLocalYMD(d); 
 
     const log = weeklyLogs.find((l) => {
-      // DB에서 가져온 UTC 날짜도 한국 날짜로 변환해서 비교
       return toLocalYMD(l.diary.created_date) === targetYMD;
     });
 
@@ -127,17 +141,32 @@ export const generateWeekly = async (userId, targetDate) => {
   // 6. AI 분석 요청
   const aiResult = await callAiAnalysisServer(weeklyLogs);
 
-  // 7. DB 저장용 데이터 구성
-  const emotionStats = calculateStats(weeklyLogs);
+  // 7. 통계 및 비교 데이터 구성
+  const emotionStats = calculateStats(weeklyLogs); // 이번 주 통계
+  const lastStats = calculateStats(lastWeekLogs);  // 지난 주 통계
+
+  // ✅ [추가] 지난주 대비 변화량 계산 logic
+  const totalCurrent = weeklyLogs.length || 1;
+  const totalLast = lastWeekLogs.length || 1;
+  
+  const compareStats = {};
+  for (let i = 0; i <= 4; i++) {
+    const currPct = Math.round((emotionStats[i] / totalCurrent) * 100);
+    const lastPct = Math.round((lastStats[i] / totalLast) * 100);
+    // 이번 주 % - 지난 주 % (예: 50 - 30 = +20)
+    compareStats[i] = currPct - lastPct; 
+  }
+
   const distributionData = {
     counts: emotionStats,
-    keywords: aiResult.keywords, // AI가 뽑은 키워드
+    compare: compareStats, // ✅ 프론트로 보낼 비교 데이터
+    keywords: aiResult.keywords, 
     daily_history: dailyHistory
   };
 
   const fullEncouragement = `[감정 변화 포인트]\n${aiResult.change_points}\n\n[다음 주 조언]\n${aiResult.prediction}`;
 
-  // 8. 이미 존재하는 리포트인지 확인 (저장할 때도 queryStart, queryEnd 사용)
+  // 8. DB 저장/업데이트
   const existingReport = await prisma.report.findFirst({
     where: {
       user_id: Number(userId),
@@ -146,29 +175,29 @@ export const generateWeekly = async (userId, targetDate) => {
     },
   });
 
+  const reportData = {
+    summary_text: aiResult.review,
+    encouragement_text: fullEncouragement,
+    emotion_distribution: distributionData,
+  };
+
   if (existingReport) {
-    // [UPDATE] 기존 리포트 업데이트
-    console.log(`[Report] 기존 리포트(ID: ${existingReport.report_id}) 업데이트`);
+    //console.log(`[Report] 기존 리포트(ID: ${existingReport.report_id}) 업데이트`);
     return prisma.report.update({
       where: { report_id: existingReport.report_id },
       data: {
-        summary_text: aiResult.review,
-        encouragement_text: fullEncouragement,
-        emotion_distribution: distributionData,
+        ...reportData,
         created_date: new Date(),
       },
     });
   } else {
-    // [CREATE] 새 리포트 생성
-    console.log(`[Report] 새 리포트 생성`);
+    //console.log(`[Report] 새 리포트 생성`);
     return prisma.report.create({
       data: {
         user_id: Number(userId),
         start_date: queryStart,
         end_date: queryEnd,
-        summary_text: aiResult.review,
-        encouragement_text: fullEncouragement,
-        emotion_distribution: distributionData,
+        ...reportData,
       },
     });
   }

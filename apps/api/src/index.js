@@ -17,7 +17,7 @@ import userRoutes from "./routes/userRoutes.js";
 import clusterRoutes from "./routes/clusterRoutes.js";
 
 // cron
-import { startEmotionPredictionJob } from "./jobs/emotionPredictJob.js";
+import { startEmotionPredictionJob, runBatchPrediction } from "./jobs/emotionPredictJob.js";
 import { initScheduledJobs } from './jobs/reportJob.js';
 
 const app = express();
@@ -37,6 +37,17 @@ app.use("/api/emotion", emotionRoutes);
 app.use("/api/report", reportRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/cluster", clusterRoutes);
+
+app.get('/test/force-prediction', async (req, res) => {
+  try {
+    console.log("🚀 [Manual] 감정 예측 강제 실행!");
+    await runBatchPrediction();
+    res.send("✅ 배치 작업 실행 완료! 로그 확인하세요.");
+  } catch (e) {
+    console.error(e);
+    res.status(500).send("에러: " + e.message);
+  }
+});
 
 // 기본 404 핸들러 (선택)
 app.use((req, res) => {

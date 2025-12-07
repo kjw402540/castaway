@@ -1,3 +1,4 @@
+// apps/mobile/src/screens/Report/HistoryReportModal.js
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
@@ -25,8 +26,9 @@ export default function HistoryReportModal({ visible, onClose, list }) {
               key={idx}
               style={styles.row}
               onPress={() => {
-                onClose();
-                navigation.navigate("Report", { year: item.year, week: item.week });
+               onClose(); // 모달 닫기
+               console.log("👉 [Modal] 새 리포트 화면 띄우기:", item.startDate);
+               navigation.push("Report", { date: item.startDate });
               }}
             >
               <View

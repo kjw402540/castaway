@@ -1,8 +1,9 @@
 import cron from "node-cron";
 import prisma from "../lib/prisma.js";
 
-// 환경변수에서 AI URL 가져오기 (없으면 로컬 기본값)
-const AI_API_URL = process.env.AI_API_URL;
+// ✅ [FIX] 환경변수가 없을 경우를 대비해 로컬 기본값(8000) 설정
+// (실제 AI 서버 주소에 맞춰 포트를 변경해서 쓰셔도 됩니다)
+const AI_BASE_URL = process.env.AI_BASE_URL || "http://127.0.0.1:8000";
 
 // ---------------------------------------------------------------------
 // [HELPER FUNCTIONS]
@@ -60,8 +61,10 @@ export const startEmotionPredictionJob = () => {
 /**
  * 🏃‍♂️ 실제 배치 작업 로직
  */
-const runBatchPrediction = async () => {
+export const runBatchPrediction = async () => {
     try {
+        console.log(`🤖 AI API URL 확인: ${AI_BASE_URL}`);
+
         // ✅ [FIX] KST 기준으로 오늘 날짜를 구함
         const nowKST = new Date(new Date().getTime() + 9 * 60 * 60 * 1000); 
         
@@ -120,7 +123,11 @@ const processUser = async (user) => {
             // ---------------------------------------------------------
             
             const history = await prisma.emotionPrediction.findFirst({
-                where: { user_id: userId, target_date: dateRange } // target_date로 변경
+                where: { 
+                    user_id: userId, 
+                    // [수정] target_date 컬럼이 없으므로 created_date로 조회
+                    created_date: dateRange 
+                } 
             });
 
             const realDiary = await prisma.diary.findFirst({
@@ -149,7 +156,6 @@ const processUser = async (user) => {
             emotionLabelList.push(emotionVal);
 
             // Day of Week (0:일요일 ~ 6:토요일)
-            // KST 날짜 객체의 요일 사용
             dayOfWeekList.push(targetDate.getDay()); 
 
             // Change Flag (전날 대비 변화 여부)
@@ -171,7 +177,7 @@ const processUser = async (user) => {
             user_type: user.cluster_id || 0
         };
 
-        const response = await fetch(`${AI_API_URL}/emotion/predict`, {
+        const response = await fetch(`${AI_BASE_URL}/emotion/predict`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
@@ -203,25 +209,40 @@ const processUser = async (user) => {
         
         const predInt = mapEmotionToInt(result.predicted_emotion);
         
-        // ✅ [FIX] 예측 대상 날짜를 '내일'로 설정
-        const tomorrow = new Date(); 
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        // 예측 대상 날짜를 KST 기준으로 고정
-        const tomorrowKST = new Date(tomorrow.getTime() + 9 * 60 * 60 * 1000); 
+        // 오늘 날짜 생성 (KST)
+        const now = new Date();
+        const nowForDB = new Date(now.getTime() + 9 * 60 * 60 * 1000);
 
-        await prisma.emotionPrediction.create({
-            data: {
-                user_id: userId,
-                // 예측 대상 날짜는 YYYY-MM-DDT00:00:00Z 형태로 깔끔하게 저장 (시분초 제거)
-                target_date: new Date(toYMD(tomorrowKST)), 
-                predicted_emotion: predInt,
-                emotion_softmax: result.emotion_softmax || [], 
-                main_emotion: null,
+        // ✅ [FIX] Vector 저장을 위한 트랜잭션 + Raw SQL 방식 적용
+        await prisma.$transaction(async (tx) => {
+            // 1. Vector 필드 제외하고 레코드 생성
+            const newPrediction = await tx.emotionPrediction.create({
+                data: {
+                    user_id: userId,
+                    // target_date 제거됨 -> created_date 사용
+                    created_date: nowForDB,
+                    predicted_emotion: predInt,
+                    main_emotion: null,
+                    // emotion_softmax: ... (여기서는 제외)
+                }
+            });
+
+            // 2. Vector 데이터가 있다면 Raw Query로 별도 업데이트
+            if (result.emotion_softmax && result.emotion_softmax.length > 0) {
+                const vectorString = JSON.stringify(result.emotion_softmax);
+                
+                // 주의: 테이블명 "EmotionPrediction" (PascalCase 확인)
+                await tx.$executeRawUnsafe(
+                    `UPDATE "EmotionPrediction" 
+                     SET emotion_softmax = '${vectorString}'::vector 
+                     WHERE prediction_id = ${newPrediction.prediction_id}`
+                );
             }
+
+            return newPrediction;
         });
 
-        console.log(`🔮 [Batch] User ${userId} 예측 저장 완료: ${result.predicted_emotion} (${predInt})`);
+        console.log(`🔮 [Batch] User ${userId} 예측 저장 완료: ${result.predicted_emotion} (${predInt}) / 날짜: ${toYMD(nowForDB)}`);
 
     } catch (e) {
         console.error(`❌ [Batch] User ${userId} 실패:`, e.message);

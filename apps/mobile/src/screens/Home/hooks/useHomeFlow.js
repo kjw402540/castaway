@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { getDiaryByDate } from "../../../services/diaryService";
+import { getTodayPrediction } from "../../../services/emotionService";
 
 // today 문자열 만드는 공용 함수
 function getTodayYMD() {
@@ -18,6 +19,8 @@ export default function useHomeFlow() {
   
   // ✅ [추가] 오늘 쓴 일기 데이터 (감정분석 결과 포함)
   const [todayDiary, setTodayDiary] = useState(null);
+
+  const [todayPrediction, setTodayPrediction] = useState(null);
 
   // 오버레이
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -43,7 +46,12 @@ export default function useHomeFlow() {
   const initTodayStatus = async () => {
     try {
       const today = getTodayYMD();
-      const diary = await getDiaryByDate(today);
+      const [diary, prediction] = await Promise.all([
+        getDiaryByDate(today),    // 일기 조회
+        getTodayPrediction()      // 예측 조회 (서비스 사용)
+      ]);
+
+    setTodayPrediction(prediction);
 
       if (diary) {
         // 오늘 일기가 이미 존재하면
@@ -114,6 +122,7 @@ export default function useHomeFlow() {
   return {
     todayStatus,
     todayDiary, // ✅ 내보내기
+    todayPrediction,
 
     showAnalysis,
     showReward,

@@ -2,10 +2,9 @@
 import { useState, useEffect } from "react";
 import { getHistoryReports } from "../../../services/reportService";
 
-// ✅ [수정] 색상표 통일
 const EMOTION_COLOR = {
   0: "#EF4444", // 분노 (Red)
-  1: "#F59E0B", // 기쁨 (Yellow/Amber) 👈 여기 수정함!
+  1: "#F59E0B", // 기쁨 (Yellow/Amber)
   2: "#10B981", // 중립 (Green)
   3: "#3B82F6", // 슬픔 (Blue)
   4: "#8B5CF6", // 놀람 (Purple)
@@ -29,10 +28,15 @@ export function useHistoryReport() {
           const week = getWeekNumber(dateObj); 
           
           const counts = item.emotion_distribution?.counts || {};
+          // 가장 많이 느낀 감정 찾기 (기본값 2)
           const mainKey = Object.keys(counts).reduce((a, b) => counts[a] > counts[b] ? a : b, 2);
 
           return {
             id: item.report_id,
+            
+            // ✅ [추가] 리포트 페이지로 넘길 때 필요한 '시작 날짜' (YYYY-MM-DD)
+            startDate: item.start_date.split('T')[0], 
+
             year: year,
             week: week,
             mainEmotion: EMOTION_LABEL[mainKey],
@@ -42,7 +46,7 @@ export function useHistoryReport() {
         });
         setHistory(formatted);
       } catch (e) {
-        // console.error(e); // 에러 로그도 일단 끔
+         // console.error(e); 
       }
     }
     load();

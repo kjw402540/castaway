@@ -1,21 +1,17 @@
-// src/screens/Report/hooks/useReportModal.js
-
 import { useState, useEffect } from "react";
 import { getWeeklyReport } from "../../../services/reportService";
 
-// ✅ [수정] 색상표 정상화 (기쁨=노랑 / 슬픔=파랑)
 const EMOTION_MAP = {
-  0: { label: "분노", icon: "😡", color: "#EF4444" }, // Red
-  1: { label: "기쁨", icon: "😊", color: "#F59E0B" }, // Amber (노랑) 👈 여기가 파랑이어서 문제였음!
-  2: { label: "평온", icon: "😐", color: "#10B981" }, // Emerald (초록)
-  3: { label: "슬픔", icon: "😭", color: "#3B82F6" }, // Blue
-  4: { label: "놀람", icon: "😲", color: "#8B5CF6" }, // Violet (보라)
+  0: { label: "분노", icon: "😡", color: "#EF4444" },
+  1: { label: "기쁨", icon: "😊", color: "#F59E0B" },
+  2: { label: "평온", icon: "😐", color: "#10B981" },
+  3: { label: "슬픔", icon: "😭", color: "#3B82F6" },
+  4: { label: "놀람", icon: "😲", color: "#8B5CF6" },
 };
 
-// 요청하신 빈 데이터 색상 (진한 회색)
 const EMPTY_COLOR = "#5f5f60"; 
 
-export function useReportModal() {
+export function useReportModal(targetDate = null) {
   const [reportData, setReportData] = useState({
     summary: "리포트를 불러오는 중입니다...",
     thisWeek: {
@@ -30,20 +26,22 @@ export function useReportModal() {
     prediction: [],
   });
 
+  // ✅ [중요] targetDate가 변경될 때마다 실행됨
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchData(targetDate);
+  }, [targetDate]);
 
-  const fetchData = async () => {
-    // console.log 삭제 (조용히 실행)
+  const fetchData = async (date) => {
     try {
-      const data = await getWeeklyReport();
+      // API 호출 (date가 null이면 백엔드에서 오늘 기준으로 처리하거나, 여기서 오늘 날짜를 보내도 됨)
+      const data = await getWeeklyReport(date);
 
       if (!data) {
         setReportData(prev => ({
           ...prev,
-          summary: "아직 생성된 주간 리포트가 없습니다.",
-          aiComment: "일기를 꾸준히 작성하면 매주 월요일에 리포트가 생성돼요!",
+          summary: "해당 기간의 리포트가 없습니다.",
+          aiComment: "일기를 작성하면 리포트가 생성됩니다.",
+          thisWeek: { ...prev.thisWeek, daily: [] } // 로딩 해제용 빈 배열
         }));
         return;
       }
@@ -52,11 +50,10 @@ export function useReportModal() {
       setReportData(formatted);
 
     } catch (e) {
-      // 에러 로그는 남겨두는 게 좋지만 원하면 지워도 됨
-      // console.error("Report Error:", e);
+      console.error(e);
       setReportData(prev => ({
         ...prev,
-        summary: "리포트를 불러오는 데 실패했습니다.",
+        summary: "리포트를 불러오지 못했습니다.",
       }));
     }
   };
@@ -65,14 +62,17 @@ export function useReportModal() {
 }
 
 // ----------------------------------------------------
-// [Helper] 변환기
+// [Helper] 데이터 변환기 (수정됨)
 // ----------------------------------------------------
 function transformData(dbData) {
   const dist = dbData.emotion_distribution || {}; 
   const counts = dist.counts || {};
   const dailyHistory = dist.daily_history || []; 
+  
+  // ✅ [수정] 백엔드에서 받은 비교 데이터 (없으면 빈 객체)
+  const serverCompare = dist.compare || {}; 
 
-  // 1. Top 3
+  // 1. Top 3 계산
   const sortedEmotions = Object.entries(counts)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 3);
@@ -80,6 +80,7 @@ function transformData(dbData) {
   const totalCount = Object.values(counts).reduce((a, b) => a + b, 0) || 1;
 
   const top3 = sortedEmotions.map(([key, val]) => ({
+    key: key, // ✅ [중요] 감정 ID(0~4)를 저장해야 비교 데이터를 찾을 수 있음
     label: EMOTION_MAP[key]?.label || "기타",
     value: Math.round((val / totalCount) * 100),
   }));
@@ -94,15 +95,12 @@ function transformData(dbData) {
   const changePointText = splitText[0]?.replace("[감정 변화 포인트]", "").trim() || "";
   const predictionText = splitText[1]?.trim() || "";
 
-  // 4. Daily 그래프 (색상 매핑)
+  // 4. Daily 그래프
   let dailyData = [];
   if (dailyHistory.length > 0) {
     dailyData = dailyHistory.map((item) => {
-      // emotion이 null이면 일기 안 쓴 날
       const hasEmotion = item.emotion !== null && item.emotion !== undefined;
-      // hasEmotion이 true면 EMOTION_MAP에서 색 꺼내고, 아니면 EMPTY_COLOR
       const color = hasEmotion ? (EMOTION_MAP[item.emotion]?.color || EMPTY_COLOR) : EMPTY_COLOR;
-
       return {
         day: item.day,
         color: color, 
@@ -113,6 +111,15 @@ function transformData(dbData) {
     dailyData = days.map(d => ({ day: d, color: EMPTY_COLOR }));
   }
 
+  // ✅ [수정] 지난주 대비 변화 데이터 매핑
+  // (기존에는 0으로 하드코딩 되어 있었음)
+  const compareData = {};
+  top3.forEach(item => {
+    // serverCompare['1'] -> 기쁨의 변화량 (+20 등)
+    // 값이 없으면 0 처리
+    compareData[item.label] = serverCompare[item.key] || 0;
+  });
+
   return {
     summary: dbData.summary_text || "데이터가 충분하지 않아요.", 
     thisWeek: {
@@ -122,11 +129,10 @@ function transformData(dbData) {
     },
     keywords: dist.keywords || [],
     changePoints: changePointText.split("\n").filter(t => t.length > 0),
-    compare: {
-      [top3[0]?.label || "기타"]: 0,
-      [top3[1]?.label || "기타"]: 0,
-      [top3[2]?.label || "기타"]: 0,
-    },
+    
+    // ✅ 수정된 비교 데이터 연결
+    compare: compareData, 
+
     aiComment: dbData.summary_text, 
     prediction: predictionText.split("\n").filter(t => t.length > 0),
   };
