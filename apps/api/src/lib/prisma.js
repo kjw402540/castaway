@@ -1,5 +1,6 @@
 // src/lib/prisma.js
-import { PrismaClient } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 
 // 전역 변수에 저장된 prisma 인스턴스가 있는지 확인
 const globalForPrisma = global;

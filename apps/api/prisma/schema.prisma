@@ -68,6 +68,7 @@ model EmotionResult {
   keyword_3       String?                @db.VarChar(30)
   embedding       Unsupported("vector")?
   emotion_softmax Unsupported("vector")?
+  day_vector      Unsupported("vector")?
   BGM             BGM[]
   diary           Diary?
   Object          Object[]
@@ -75,17 +76,18 @@ model EmotionResult {
 }
 
 model Object {
-  object_id     Int            @id @default(autoincrement())
-  emotion_id    Int?
-  user_id       Int
-  diary_id      Int?           @unique
-  object_name   String         @db.VarChar(50)
-  object_image  String
-  created_date  DateTime       @default(now()) @db.Timestamp(6)
-  Diary         Diary?         @relation(fields: [diary_id], references: [diary_id], onDelete: Cascade)
-  EmotionResult EmotionResult? @relation(fields: [emotion_id], references: [emotion_id], onDelete: Restrict)
-  user          User           @relation(fields: [user_id], references: [user_id])
-  SharedObject  SharedObject[]
+  object_id            Int                    @id @default(autoincrement())
+  emotion_id           Int?
+  user_id              Int
+  diary_id             Int?                   @unique
+  object_name          String                 @db.VarChar(50)
+  object_image         String
+  created_date         DateTime               @default(now()) @db.Timestamp(6)
+  ClusterDefaultObject ClusterDefaultObject[]
+  Diary                Diary?                 @relation(fields: [diary_id], references: [diary_id], onDelete: Cascade)
+  EmotionResult        EmotionResult?         @relation(fields: [emotion_id], references: [emotion_id], onDelete: Restrict)
+  user                 User                   @relation(fields: [user_id], references: [user_id])
+  SharedObject         SharedObject[]
 }
 
 model BGM {
@@ -148,4 +150,12 @@ model SharedObject {
   User_SharedObject_giver_user_idToUser    User           @relation("SharedObject_giver_user_idToUser", fields: [giver_user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_giver_user")
   Object                                   Object         @relation(fields: [object_id], references: [object_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_object")
   User_SharedObject_receiver_user_idToUser User           @relation("SharedObject_receiver_user_idToUser", fields: [receiver_user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction, map: "fk_receiver_user")
+}
+
+model ClusterDefaultObject {
+  cluster_id Int       @id
+  object_id  Int
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+  Object     Object    @relation(fields: [object_id], references: [object_id], map: "fk_clusterdefaultobject_object")
 }
