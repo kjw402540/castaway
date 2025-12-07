@@ -185,7 +185,7 @@ const processUser = async (user) => {
             emotion_label: emotionLabelList,
             day_of_week: dayOfWeekList,
             change_flag: changeFlagList,
-            user_type: user.cluster_id || 3
+            user_type: user.cluster_id || 0
         };
 
         console.log(`🚀 [DEBUG] AI 전송 Payload 확인 (User: ${userId}):`);

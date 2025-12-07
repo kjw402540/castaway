@@ -203,14 +203,14 @@ export const runFullAnalysisWorkflow = async (diaryId, text) => {
       let sharedObjectInfo = null; // 알림 메시지용 변수
 
       try {
-          // 1. [조건] 내 것(userId)이 아니면서 + 현재 내 감정(emotionInt)과 일치하는 오브제 찾기
-          // (※ 만약 DB에 데이터가 별로 없으면 EmotionResult 부분은 주석 처리하세요)
+          // 1. [조건] 내 것(userId)이 아니면서 + '기쁨(Joy)' 감정의 오브제 찾기
           const targetObject = await prisma.object.findFirst({
               where: {
                   user_id: { not: userId }, // 내 오브제 제외
-                  // ▼ 감정이 같은 오브제 찾기 (데이터 부족하면 이 블록 주석 처리!)
+                  
+                  // ▼ [수정] 내 현재 감정과 상관없이 "Joy(1)"인 오브제만 찾습니다.
                   EmotionResult: {
-                      main_emotion: emotionInt 
+                      main_emotion: 1  // 0:Anger, 1:Joy, 2:Neutral, 3:Sad, 4:Fear
                   }
               },
               orderBy: { created_date: 'desc' } // 최신순으로 하나 가져옴
@@ -222,23 +222,22 @@ export const runFullAnalysisWorkflow = async (diaryId, text) => {
               
               await prisma.sharedObject.create({
                   data: {
-                      giver_user_id: targetObject.user_id,    // 주는 사람 (오브제 원주인)
-                      receiver_user_id: userId,               // 받는 사람 (현재 일기 쓴 유저)
-                      object_id: targetObject.object_id,      // 공유된 오브제
-                      emotion_id: savedEmotion.emotion_id,    // 받는 순간의 내 감정 ID (FK)
-                      share_type: 1,                          // 1: 랜덤 매칭 (임의 지정)
-                      note: "오늘의 일기 작성 보상"            // 관리용 메모
+                      giver_user_id: targetObject.user_id,    
+                      receiver_user_id: userId,               
+                      object_id: targetObject.object_id,      
+                      emotion_id: savedEmotion.emotion_id,    
+                      share_type: 1,                          
+                      note: "오늘의 일기 작성 보상 (Happy)"            
                   }
               });
 
               sharedObjectInfo = targetObject.object_name;
               console.log(`📥 [DB Saved] SharedObject 테이블 저장 완료 (Giver: ${targetObject.user_id} -> Receiver: ${userId})`);
           } else {
-              console.log(`⚠️ [Step 3.5] 조건에 맞는(다른 사람의) 오브제가 없어 건너뜁니다.`);
+              console.log(`⚠️ [Step 3.5] 공유해줄 '기쁨(Joy)' 오브제가 없어 건너뜁니다.`);
           }
 
       } catch (shareErr) {
-          // 공유 로직이 실패해도 메인 플로우(알림 발송)는 계속되어야 함
           console.warn(`⚠️ [Step 3.5] 공유 로직 에러(무시):`, shareErr.message);
       }
 
