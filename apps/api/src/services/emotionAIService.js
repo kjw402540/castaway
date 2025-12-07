@@ -3,7 +3,7 @@
 import axios from 'axios';
 
 // 환경 변수가 설정되어 있다고 가정합니다.
-const AI_SERVER_BASE_URL = process.env.AI_SERVER_URL || "http://3.131.231.216:8000";
+const AI_SERVER_BASE_URL = process.env.AI_SERVER_URL || "http://172.31.19.26:8000";
 
 export async function analyze(text) {
   // 실제 모델 붙일 때 이 부분 교체하면 됨

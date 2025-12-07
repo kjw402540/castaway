@@ -3,7 +3,7 @@ import prisma from "../lib/prisma.js";
 import axios from 'axios';
 import { Prisma } from '@prisma/client'; // Raw Query 사용을 위해 추가
 
-const AI_SERVER_BASE_URL  = process.env.AI_BASE_URL || "http://127.0.0.1:8000";
+const AI_SERVER_BASE_URL  = process.env.AI_BASE_URL || "http://172.31.19.26:8000";
 
 /* --------------------------------------------------------
    모든 클러스터 조회

@@ -8,10 +8,10 @@ const data = {
   diary_id: 163
 };
 
-fetch("http://localhost:4000/api/emotion/day-vector", {
-  method: "POST",
-  headers: {"Content-Type": "application/json"},
-  body: JSON.stringify(data)
+fetch("http://172.31.19.26:8000/emotion/day-vector", {
+method: "POST",
+headers: {"Content-Type": "application/json"},
+body: JSON.stringify(data)
 })
 .then(r => r.json())
 .then(d => console.log(JSON.stringify(d, null, 2)))
