@@ -44,33 +44,34 @@ router.use(authRequired); // 👈 여기서부터 인증 적용됨
 // (주의: 다른 '/:id' 같은 라우트보다 위에 있어야 안전합니다)
 router.get("/shared/latest", async (req, res) => {
   try {
-    const userId = req.user.user_id; // authRequired 미들웨어가 토큰 해석해서 넣어줌
+    const userId = req.user.user_id;
 
-    // 1. SharedObject 테이블 조회 (내가 받은 것 중 최신 1개)
+    // 1. DB 조회 (이미지 파일명 등은 가져와야 하므로 유지)
     const latestShare = await prisma.sharedObject.findFirst({
       where: { receiver_user_id: userId },
       orderBy: { created_date: "desc" },
       include: {
-        Object: true,       // 이미지 파일명
-        EmotionResult: true // 키워드
+        Object: true, // 이미지 파일명 필요
+        // EmotionResult: true // 키워드 안 쓸 거면 include 안 해도 됨 (해도 상관없음)
       },
     });
 
-    // 2. 받은 게 없으면 null 리턴
     if (!latestShare) {
       return res.status(200).json({ success: true, data: null });
     }
 
-    // 3. 키워드 정리 (null 제외)
-    const em = latestShare.EmotionResult;
-    const keywords = [em?.keyword_1, em?.keyword_2, em?.keyword_3].filter(k => k);
+    // 2. [수정] 키워드 강제 고정
+    // 원래 로직: const keywords = [ ... ].filter(k => k);
+    
+    // ✅ 여기를 수정했습니다!
+    const keywords = ["주말", "성취"]; 
 
-    // 4. 응답 데이터 구성
+    // 3. 응답 데이터 구성
     const resultData = {
       share_id: latestShare.share_id,
       object_name: latestShare.Object.object_name,
       object_image_filename: latestShare.Object.object_image,
-      keywords: keywords,
+      keywords: keywords, // 무조건 ["주말", "성취"]가 나갑니다.
       received_date: latestShare.created_date,
       message: latestShare.note
     };
