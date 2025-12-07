@@ -6,17 +6,17 @@ import { islandStyles as s } from "./IslandSceneStyles";
 import TreeLayer from "./TreeLayer";
 
 export default function IslandObjectsLayer({
-  onPressChestDetail,
-  onPressTurntableDetail,
+  onPressChestDetail,     // 🎁 Home에서 넘겨준 이름 (수정됨)
+  onPressTurntableDetail, // 💿 Home에서 넘겨준 이름 (수정됨)
   onPressTree,
 }) {
   const moveAnim = useMoveAnimation();
 
-  // 🔹 이미지 상태
+  // 🔹 이미지 상태 (열림/닫힘)
   const [chestOpen, setChestOpen] = useState(false);
   const [turntableOpen, setTurntableOpen] = useState(false);
 
-  // 🔹 Scale 애니메이션 (빠르고 즉각적)
+  // 🔹 Scale 애니메이션 (클릭 시 띠용 효과)
   const scaleChest = useRef(new Animated.Value(1)).current;
   const scaleTurntable = useRef(new Animated.Value(1)).current;
   const scaleTree = useRef(new Animated.Value(1)).current;
@@ -36,22 +36,30 @@ export default function IslandObjectsLayer({
     ]).start();
   };
 
-  // 🔹 Chest 토글
+  // 🔹 Chest 토글 (클릭 시 애니메이션 + 모달 열기)
   const handleChest = () => {
     setChestOpen((prev) => !prev);
     animateScale(scaleChest);
-    onPressChestDetail?.();
+    
+    // 👇 [중요] 부모(Home)가 넘겨준 함수 실행
+    if (onPressChestDetail) {
+        onPressChestDetail();
+    }
   };
 
-  // 🔹 Turntable 토글
+  // 🔹 Turntable 토글 (클릭 시 애니메이션 + 모달 열기)
   const handleTurntable = () => {
     setTurntableOpen((prev) => !prev);
     animateScale(scaleTurntable);
-    onPressTurntableDetail?.();
+
+    // 👇 [중요] 부모(Home)가 넘겨준 함수 실행
+    if (onPressTurntableDetail) {
+        onPressTurntableDetail();
+    }
   };
 
   /* -----------------------------------------
-     🪨 Rock: 점프 + 좌우 툭툭 튀기기 복구!!!
+      🪨 Rock: 점프 + 좌우 툭툭 튀기기 복구!!!
   ----------------------------------------- */
   const rockJump = useRef(new Animated.Value(0)).current;
   const rockShift = useRef(new Animated.Value(0)).current;
@@ -129,7 +137,7 @@ export default function IslandObjectsLayer({
         />
       </Pressable>
 
-      {/* 🧰 Chest */}
+      {/* 🧰 Chest (보물상자) */}
       <Pressable onPress={handleChest} style={s.chestWrapper}>
         <Animated.Image
           source={
@@ -141,7 +149,7 @@ export default function IslandObjectsLayer({
         />
       </Pressable>
 
-      {/* 🎵 Turntable */}
+      {/* 🎵 Turntable (턴테이블) */}
       <Pressable onPress={handleTurntable} style={s.turntableWrapper}>
         <Animated.Image
           source={

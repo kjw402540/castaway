@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Platform, ScrollView } from "react-native";
+import { View, StyleSheet, Platform, Alert } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useBackExit } from "../../hooks/useBackExit";
@@ -11,14 +11,19 @@ import HomeBanner from "./components/HomeBanner";
 import HomeEmotionPanel from "./components/HomeEmotionPanel";
 import HomePredictionCard from "./components/HomePredictionCard";
 
-import ObjectTodayModal from "../Object/ObjectTodayModal";
+import ObjectDetailModal from "../Object/ObjectDetailModal";
+import TurntableModal from "../Object/TurntableModal";
+import DiaryWriteModal from "../Diary/DiaryWriteModal";
 import TreeFortuneModal from "./components/TreeFortuneModal";
 import RockWorryModal from "./components/RockWorryModal";
-import DiaryWriteModal from "../Diary/DiaryWriteModal";
+import ObjectTodayModal from "../Object/ObjectTodayModal";
 
 import useHomeFlow from "./hooks/useHomeFlow";
 
-// 환경별 주소 설정 (안드로이드/iOS)
+// 👇 [추가] ObjectsPage에서 쓰던 이미지 주소 변환 함수 가져오기!
+import { getObjectImageUrl } from "../../services/objectService";
+
+// (이 BASE_URL은 API 호출용이고, 이미지용은 objectService 안에서 처리됨)
 const BASE_URL = Platform.OS === 'android' ? "http://10.0.2.2:4000" : "http://localhost:4000";
 
 function getLocalYMD() {
@@ -32,18 +37,18 @@ export default function HomePage() {
   const today = getLocalYMD();
   const storageKey = `emotionCardClosed_${today}`;
 
-  // 훅에서 데이터 가져오기
   const { todayStatus, startAnalysis, todayDiary, todayPrediction } = useHomeFlow();
 
-  // State
   const [writeVisible, setWriteVisible] = useState(false);
-  const [todayObjVisible, setTodayObjVisible] = useState(false);
   const [treeVisible, setTreeVisible] = useState(false);
   const [rockVisible, setRockVisible] = useState(false);
   const [bannerClosed, setBannerClosed] = useState(false);
   const [showEmotionCard, setShowEmotionCard] = useState(true);
 
-  // 초기화 및 테마 설정
+  const [chestVisible, setChestVisible] = useState(false);
+  const [turntableVisible, setTurntableVisible] = useState(false);
+  const [todayObjVisible, setTodayObjVisible] = useState(false);
+
   useEffect(() => {
     AsyncStorage.getItem(storageKey).then((v) => {
       if (v === "true") setShowEmotionCard(false);
@@ -62,6 +67,33 @@ export default function HomePage() {
     setEmotion(key);
   }, [todayDiary]);
 
+  // ----------------------------------------------------------------
+  // 🧩 데이터 준비
+  // ----------------------------------------------------------------
+  
+  // 1. 오브제 데이터
+  const todayObject = todayDiary?.object; 
+  const objectForModal = todayObject ? {
+      date: today,
+      // 👇 [수정] 수동으로 합치지 말고, 서비스 함수 사용! (ObjectsPage와 동일하게)
+      imageUrl: getObjectImageUrl(todayObject.object_image), 
+      emoji: "🎁", 
+      ...todayObject
+  } : null;
+
+  // 2. BGM 데이터
+  const todayBgmData = todayDiary?.bgms && todayDiary.bgms.length > 0 
+      ? todayDiary.bgms[0] 
+      : null;
+      
+  const bgmForModal = todayBgmData ? {
+      title: "오늘의 감정 BGM",
+      emoji: "💿",
+      // 👇 [참고] BGM도 주소 변환 함수가 있다면 써야 하지만, 보통 로컬/URL 그대로 씀
+      // 만약 소리가 안 나면 여기도 확인 필요
+      audioUri: todayBgmData.bgm_url 
+  } : null;
+
   return (
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.skyBottom }]}
@@ -69,9 +101,24 @@ export default function HomePage() {
     >
       <View style={StyleSheet.absoluteFill}>
         <IslandScene
-          onPressChest={() => setTodayObjVisible(true)}
+          onPressChestDetail={() => {
+             if (todayObject) {
+                 setChestVisible(true);
+             } else {
+                 if(todayStatus === 'no_diary') Alert.alert("아직 없어요", "일기를 쓰면 선물이 도착해요!");
+                 else setTodayObjVisible(true);
+             }
+          }}
+          
+          onPressTurntableDetail={() => {
+             if (todayBgmData) {
+                 setTurntableVisible(true);
+             } else {
+                 if(todayStatus === 'no_diary') Alert.alert("음악이 없어요", "일기를 쓰면 음악을 만들어드려요!");
+             }
+          }}
+
           onPressTree={() => setTreeVisible(true)}
-          onPressRock={() => setRockVisible(true)}
         />
       </View>
 
@@ -81,29 +128,13 @@ export default function HomePage() {
         </View>
       )}
 
-      {/* 🚨 [디버깅 영역] 화면 상단에 상태값 강제 표시 (빨간 글씨)
-      <View style={{ position: 'absolute', top: 50, left: 20, zIndex: 999, backgroundColor: 'rgba(0,0,0,0.7)', padding: 10 }}>
-        <Text style={{ color: 'white', fontWeight: 'bold' }}>🔍 디버깅 정보</Text>
-        <Text style={{ color: '#ff5555' }}>Status: {todayStatus}</Text>
-        <Text style={{ color: '#55ff55' }}>Prediction: {todayPrediction ? '있음(OK)' : '없음(NULL)'}</Text>
-        {todayPrediction && (
-            <Text style={{ color: '#ccccff', fontSize: 10 }}>
-                {JSON.stringify(todayPrediction)}
-            </Text>
-        )}
-      </View> */}
-
       <View style={styles.bottomOverlay}>
-        
-        {/* 👇 [조건 확인] 이 두 가지가 모두 맞아야 뜹니다 */}
         {todayStatus === "no_diary" && todayPrediction && (
           <HomePredictionCard prediction={todayPrediction} />
         )}
-
         {todayStatus === "no_diary" && (
           <HomeInputBox onPressDiary={() => setWriteVisible(true)} />
         )}
-
         <HomeEmotionPanel
           today={today}
           todayStatus={todayStatus}
@@ -112,6 +143,22 @@ export default function HomePage() {
           setShowEmotionCard={setShowEmotionCard}
         />
       </View>
+
+      {/* 모달 연결 */}
+      <ObjectDetailModal
+        visible={chestVisible}
+        object={objectForModal}
+        onClose={() => setChestVisible(false)}
+        onPrev={() => {}}
+        onNext={() => {}}
+        onOpenDiary={() => {}}
+      />
+
+      <TurntableModal
+        visible={turntableVisible}
+        item={bgmForModal}
+        onClose={() => setTurntableVisible(false)}
+      />
 
       <DiaryWriteModal
         visible={writeVisible}
@@ -123,6 +170,7 @@ export default function HomePage() {
           setWriteVisible(false);
         }}
       />
+      
       <ObjectTodayModal visible={todayObjVisible} onClose={() => setTodayObjVisible(false)} />
       <TreeFortuneModal visible={treeVisible} onClose={() => setTreeVisible(false)} />
       <RockWorryModal visible={rockVisible} onClose={() => setRockVisible(false)} />
