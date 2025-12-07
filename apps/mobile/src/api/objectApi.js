@@ -16,4 +16,7 @@ export const objectApi = {
 
   // 섬에 배치 (POST /object/place/:id)
   place: (id) => httpClient.post(`/object/place/${id}`),
+
+  // ✅ [NEW] 가장 최근 공유받은 오브제 조회 (GET /object/shared/latest)
+  getLatestShared: () => httpClient.get("/object/shared/latest"),
 };

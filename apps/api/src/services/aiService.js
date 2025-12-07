@@ -194,18 +194,72 @@ export const runFullAnalysisWorkflow = async (diaryId, text) => {
       });
 
       console.log(`🔗 [Step 3] Diary 연결 완료`);
+      
+      // =========================================================
+      // 🎁 STEP 3.5: [Dummy] 다른 사람의 오브제 공유받기 (SharedObject 생성)
+      // =========================================================
+      console.log(`🤝 [Step 3.5] 공유 오브제 매칭 및 저장 시작...`);
+      
+      let sharedObjectInfo = null; // 알림 메시지용 변수
+
+      try {
+          // 1. [조건] 내 것(userId)이 아니면서 + 현재 내 감정(emotionInt)과 일치하는 오브제 찾기
+          // (※ 만약 DB에 데이터가 별로 없으면 EmotionResult 부분은 주석 처리하세요)
+          const targetObject = await prisma.object.findFirst({
+              where: {
+                  user_id: { not: userId }, // 내 오브제 제외
+                  // ▼ 감정이 같은 오브제 찾기 (데이터 부족하면 이 블록 주석 처리!)
+                  EmotionResult: {
+                      main_emotion: emotionInt 
+                  }
+              },
+              orderBy: { created_date: 'desc' } // 최신순으로 하나 가져옴
+          });
+
+          // 2. 찾은 오브제가 있다면 'SharedObject' 테이블에 저장 (매칭 성사)
+          if (targetObject) {
+              console.log(`🎁 [Step 3.5] 공유 대상 발견! (Object ID: ${targetObject.object_id})`);
+              
+              await prisma.sharedObject.create({
+                  data: {
+                      giver_user_id: targetObject.user_id,    // 주는 사람 (오브제 원주인)
+                      receiver_user_id: userId,               // 받는 사람 (현재 일기 쓴 유저)
+                      object_id: targetObject.object_id,      // 공유된 오브제
+                      emotion_id: savedEmotion.emotion_id,    // 받는 순간의 내 감정 ID (FK)
+                      share_type: 1,                          // 1: 랜덤 매칭 (임의 지정)
+                      note: "오늘의 일기 작성 보상"            // 관리용 메모
+                  }
+              });
+
+              sharedObjectInfo = targetObject.object_name;
+              console.log(`📥 [DB Saved] SharedObject 테이블 저장 완료 (Giver: ${targetObject.user_id} -> Receiver: ${userId})`);
+          } else {
+              console.log(`⚠️ [Step 3.5] 조건에 맞는(다른 사람의) 오브제가 없어 건너뜁니다.`);
+          }
+
+      } catch (shareErr) {
+          // 공유 로직이 실패해도 메인 플로우(알림 발송)는 계속되어야 함
+          console.warn(`⚠️ [Step 3.5] 공유 로직 에러(무시):`, shareErr.message);
+      }
 
       // =========================================================
       // STEP 4: Notification 생성
       // =========================================================
       const emotionLabelKor =
-         ["분노/혐오", "기쁨", "중립", "슬픔", "놀람/공포"][emotionInt] ?? "감정";
+          ["분노/혐오", "기쁨", "중립", "슬픔", "놀람/공포"][emotionInt] ?? "감정";
+
+      // ▼ [수정] 공유 오브제가 있으면 알림 메시지를 바꿈
+      let notiMessage = `감정 분석과 나만의 오브제가 도착했습니다! (${emotionLabelKor})`;
+      
+      if (sharedObjectInfo) {
+          notiMessage = `내 오브제와 누군가의 선물(${sharedObjectInfo})이 도착했습니다! 🎁`;
+      }
 
       await notificationService.create({
-         user_id: userId,
-         title: "오늘의 기록 완료",
-         message: `감정 분석과 나만의 오브제가 도착했습니다! (${emotionLabelKor})`,
-         type: 2,
+          user_id: userId,
+          title: "오늘의 기록 완료",
+          message: notiMessage,
+          type: 2,
       });
 
       console.log(`📬 [Step 4] Notification 발송 성공!`);

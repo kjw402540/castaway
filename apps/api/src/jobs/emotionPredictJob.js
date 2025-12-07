@@ -108,6 +108,9 @@ const processUser = async (user) => {
     const yesterday = new Date(nowKST);
     yesterday.setDate(nowKST.getDate() - 1);
 
+    // 시작일: 어제로부터 13일 전 (총 14일 구간)
+    const startDate = new Date(yesterday);
+    startDate.setDate(yesterday.getDate() - 13);
     try {
         // 14일 전 ~ 어제까지 루프 (과거 -> 최신 순서로 쌓음)
         for (let i = 13; i >= 0; i--) {
@@ -166,7 +169,15 @@ const processUser = async (user) => {
             }
             prevEmotion = emotionVal;
         }
-
+        // =========================================================
+        // 🔍 [DEBUG] 여기에 로그 추가 (AI 전송 직전 데이터 확인)
+        // =========================================================
+        console.log(`----------------------------------------------------------------`);
+        console.log(`🔍 [DEBUG] User ID: ${userId} / 데이터 생성 완료`);
+        console.log(`📊 감정 흐름 (14일):`, JSON.stringify(emotionLabelList));
+        console.log(`🗓️ 대상 기간: ${toYMD(startDate)} ~ ${toYMD(yesterday)} (총 14일)`);
+        console.log(`📅 요일 흐름 (14일):`, JSON.stringify(dayOfWeekList));
+        console.log(`----------------------------------------------------------------`);
         // =========================================================
         // 📡 AI 서버 요청 (POST /emotion/predict)
         // =========================================================
@@ -174,9 +185,12 @@ const processUser = async (user) => {
             emotion_label: emotionLabelList,
             day_of_week: dayOfWeekList,
             change_flag: changeFlagList,
-            user_type: user.cluster_id || 0
+            user_type: user.cluster_id || 3
         };
 
+        console.log(`🚀 [DEBUG] AI 전송 Payload 확인 (User: ${userId}):`);
+        console.log(JSON.stringify(payload, null, 2));
+        
         const response = await fetch(`${AI_BASE_URL}/emotion/predict`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

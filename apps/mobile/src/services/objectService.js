@@ -58,3 +58,37 @@ export const getObjectImageUrl = (filename) => {
     return null; 
   }
 };
+
+/* ----------------------------------------------------
+  8. [NEW] 최근 공유받은 오브제 가져오기
+  - NotificationDetailModal에서 호출
+----------------------------------------------------- */
+export const getLatestSharedObject = async () => {
+  if (USE_API) {
+    try {
+      const response = await objectApi.getLatestShared();
+      
+      // 서버 응답 구조가 { success: true, data: { ... } } 라고 가정
+      if (response && response.data) {
+        const item = response.data;
+        
+        // 파일명을 전체 URL로 변환해서 리턴
+        return {
+          ...item,
+          object_image: getObjectImageUrl(item.object_image_filename), 
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("공유 오브제 조회 에러:", error);
+      return null;
+    }
+  } else {
+    // [Mock 모드] 테스트용 가짜 데이터 리턴
+    return {
+      object_image: "https://via.placeholder.com/150/0000FF/808080?Text=TestObject",
+      keywords: ["테스트", "위로", "새벽"],
+      description: "Mock 모드에서의 공유 오브제입니다."
+    };
+  }
+};

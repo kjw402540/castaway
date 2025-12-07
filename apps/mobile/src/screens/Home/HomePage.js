@@ -55,17 +55,47 @@ export default function HomePage() {
     });
   }, []);
 
+  // ----------------------------------------------------------------
+  // 🎨 [수정] 감정 테마 적용 로직 (일기 -> 예측값 순서)
+  // ----------------------------------------------------------------
   useEffect(() => {
-    const result = todayDiary?.emotionResult;
-    if (!result) return;
+    // 🔍 [DEBUG] 데이터가 실제로 어떻게 생겼는지 확인용 로그
+    if (todayPrediction) {
+       console.log("🔍 [HomePage] Prediction Data:", JSON.stringify(todayPrediction));
+    }
+
+    let targetEmotionId = null;
+
+    // 1. 일기(TodayDiary)가 있으면 그게 최우선 (변수명: main_emotion)
+    if (todayDiary?.emotionResult) {
+      targetEmotionId = todayDiary.emotionResult.main_emotion;
+    } 
+    // 2. 일기가 없으면 예측(Prediction) 사용
+    else if (todayPrediction) {
+      // 👇 [수정] 변수명이 달라도 다 잡아내도록 수정!
+      // (emotion_id 였거나, predicted_emotion 이거나 둘 다 체크)
+      targetEmotionId = todayPrediction.predicted_emotion 
+                     ?? todayPrediction.emotion_id 
+                     ?? todayPrediction.main_emotion; 
+    }
+
+    // 값이 없으면 리턴 (기본 테마 유지)
+    if (targetEmotionId === null || targetEmotionId === undefined) return;
+
+    console.log("🎨 [HomePage] 테마 변경 시도 -> Emotion ID:", targetEmotionId);
+
+    // 감정 ID -> 테마 Key 변환
     const key =
-      result.main_emotion === 0 ? "Anger/Disgust"
-      : result.main_emotion === 1 ? "Joy"
-      : result.main_emotion === 2 ? "Neutral"
-      : result.main_emotion === 3 ? "Sadness"
+      targetEmotionId === 0 ? "Anger/Disgust"
+      : targetEmotionId === 1 ? "Joy"
+      : targetEmotionId === 2 ? "Neutral"
+      : targetEmotionId === 3 ? "Sadness"
       : "Surprise/Fear";
+
+    // 테마 적용
     setEmotion(key);
-  }, [todayDiary]);
+
+  }, [todayDiary, todayPrediction]);
 
   // ----------------------------------------------------------------
   // 🧩 데이터 준비
