@@ -1,4 +1,4 @@
-🌴 Castaway – 발화자 감정 분석 기반 생성형 감정 케어 서비스
+🌴 Castaway – 비언어적 소통 생성형 감정 케어 서비스
 🧠 Overview
 
 Castaway는 사용자가 작성한 일기(텍스트)를 분석해
