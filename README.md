@@ -90,3 +90,4 @@ Main Repository: https://github.com/kjw402540/castaway
 AI Server Repository: https://github.com/kjw402540/castaway_AI
 
 Demo Video: https://drive.google.com/file/d/16vsCk4iANrTL3_j-bqIYV22YgjDXsUou/view
+
